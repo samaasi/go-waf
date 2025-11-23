@@ -9,6 +9,7 @@ import (
 	"go-waf/internal/config"
 	"go-waf/internal/middleware"
 	"go-waf/internal/platform/cache"
+	"go-waf/internal/platform/geoip"
 	"go-waf/internal/platform/logger"
 
 	"github.com/gin-gonic/gin"
@@ -31,16 +32,16 @@ func main() {
         logger.Log.Fatal("Failed to load keyword rules", zap.Error(err))
     }
 
-    regexEngine := engines.NewRegexEngineWithPath("./configs/rules/regex_rules.json")
-    _ = regexEngine.LoadRules()
-    mlModel := engines.NewStatisticalModel()
+	regexEngine := engines.NewRegexEngineWithPath("./configs/rules/regex_rules.json")
+	_ = regexEngine.LoadRules()
+	mlModel := engines.NewStatisticalModel()
 
     pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine, mlModel)
 
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-    r := routeSetup(pipeline, redisClient, &cfg.Security, &cfg.Server)
+	r := routeSetup(pipeline, redisClient, &cfg.Security, &cfg.Server)
 
 	addr := fmt.Sprintf(":%s", cfg.Server.Port)
 	logger.Log.Info("Server listening", zap.String("addr", addr))
@@ -56,7 +57,14 @@ func routeSetup(pipeline *analysis.Pipeline, redisClient *cache.RedisClient, sec
         _ = r.SetTrustedProxies(srvCfg.TrustedProxies)
     }
 
-    wafMiddleware := middleware.New(pipeline, redisClient, secCfg, srvCfg, nil)
+    var geoProv geoip.GeoIPProvider
+    if secCfg.EnableGeoIP {
+        if gp, err := geoip.NewMaxMindDB("configs/rules/GeoLite2-Country.mmdb"); err == nil {
+            geoProv = gp
+        }
+    }
+
+    wafMiddleware := middleware.New(pipeline, redisClient, secCfg, srvCfg, geoProv)
     r.Use(wafMiddleware.Handler())
 
 	r.GET("/health", func(c *gin.Context) {
