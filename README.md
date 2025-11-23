@@ -152,4 +152,5 @@ docker run -p 8080:8080 -e WAF_CONFIG_DIR=/configs go-waf
 - [] Prometheus metrics and OpenTelemetry traces
 - [] Rule hot-reload and richer admin controls
 - [] Kubernetes manifests (Deployment/Service/ConfigMap/Secret, health probes, HPA)
+- [] Programmable WAF engine (JSON DSL/CEL/OPA)
 - [] Additional evasions and normalization strategies
