@@ -1,10 +1,11 @@
 package config
 
 import (
-	"errors"
-	"strings"
+    "errors"
+    "os"
+    "strings"
 
-	"github.com/spf13/viper"
+    "github.com/spf13/viper"
 )
 
 type Config struct {
@@ -15,10 +16,12 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port         string `mapstructure:"port"`
-	Mode         string `mapstructure:"mode"`
-	ReadTimeout  int    `mapstructure:"read_timeout"`
-	WriteTimeout int    `mapstructure:"write_timeout"`
+    Port         string `mapstructure:"port"`
+    Mode         string `mapstructure:"mode"`
+    ReadTimeout  int    `mapstructure:"read_timeout"`
+    WriteTimeout int    `mapstructure:"write_timeout"`
+    MaxBodyMB    int    `mapstructure:"max_body_mb"`
+    TrustedProxies []string `mapstructure:"trusted_proxies"`
 }
 
 type RedisConfig struct {
@@ -29,9 +32,13 @@ type RedisConfig struct {
 }
 
 type SecurityConfig struct {
-	BlockThreshold int  `mapstructure:"block_threshold"`
-	RateLimit      int  `mapstructure:"rate_limit"`
-	EnableGeoIP    bool `mapstructure:"enable_geoip"`
+    BlockThreshold int  `mapstructure:"block_threshold"`
+    RateLimit      int  `mapstructure:"rate_limit"`
+    EnableGeoIP    bool `mapstructure:"enable_geoip"`
+    RateLimitWindowSeconds int `mapstructure:"rate_limit_window_seconds"`
+    RateLimitFailOpen bool `mapstructure:"rate_limit_fail_open"`
+    AllowCountries []string `mapstructure:"allow_countries"`
+    BlockCountries []string `mapstructure:"block_countries"`
 }
 
 type LogConfig struct {
@@ -40,9 +47,13 @@ type LogConfig struct {
 
 // LoadConfig reads configuration from file or environment variables.
 func LoadConfig(path string) (*Config, error) {
-	viper.AddConfigPath(path)
-	viper.SetConfigName("app-config")
-	viper.SetConfigType("yaml")
+    viper.AddConfigPath(path)
+    viper.AddConfigPath("configs")
+    if dir := os.Getenv("WAF_CONFIG_DIR"); dir != "" {
+        viper.AddConfigPath(dir)
+    }
+    viper.SetConfigName("app-config")
+    viper.SetConfigType("yaml")
 
 	// Allow Environment Variables to override config (e.g., WAF_REDIS_HOST)
 	viper.SetEnvPrefix("WAF")
@@ -50,19 +61,25 @@ func LoadConfig(path string) (*Config, error) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	// Defaults for local/dev environments
-	viper.SetDefault("server.port", "8080")
-	viper.SetDefault("server.mode", "debug")
-	viper.SetDefault("server.read_timeout", 30)
-	viper.SetDefault("server.write_timeout", 30)
+    viper.SetDefault("server.port", "8080")
+    viper.SetDefault("server.mode", "debug")
+    viper.SetDefault("server.read_timeout", 30)
+    viper.SetDefault("server.write_timeout", 30)
+    viper.SetDefault("server.max_body_mb", 10)
+    viper.SetDefault("server.trusted_proxies", []string{})
 
 	viper.SetDefault("redis.host", "127.0.0.1")
 	viper.SetDefault("redis.port", 6379)
 	viper.SetDefault("redis.password", "")
 	viper.SetDefault("redis.db", 0)
 
-	viper.SetDefault("security.block_threshold", 50)
-	viper.SetDefault("security.rate_limit", 100)
-	viper.SetDefault("security.enable_geoip", false)
+    viper.SetDefault("security.block_threshold", 50)
+    viper.SetDefault("security.rate_limit", 100)
+    viper.SetDefault("security.enable_geoip", false)
+    viper.SetDefault("security.rate_limit_window_seconds", 1)
+    viper.SetDefault("security.rate_limit_fail_open", true)
+    viper.SetDefault("security.allow_countries", []string{})
+    viper.SetDefault("security.block_countries", []string{})
 
 	viper.SetDefault("log.level", "info")
 

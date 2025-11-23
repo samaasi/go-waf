@@ -1,10 +1,12 @@
 package engines
 
 import (
-	"regexp"
-	"strings"
+    "encoding/json"
+    "os"
+    "regexp"
+    "strings"
 
-	"go-waf/internal/domain"
+    "go-waf/internal/domain"
 )
 
 // RegexRule implements domain.Rule
@@ -48,20 +50,23 @@ func (r *RegexRule) Evaluate(req *domain.WafRequest) (bool, string) {
 
 // RegexEngine implements domain.RuleEngine
 type RegexEngine struct {
-	rules []RegexRule
+    rules []RegexRule
+    rulePath string
 }
 
 func NewRegexEngine() *RegexEngine {
-	// @TODO: load these from a YAML file or DB
-	engine := &RegexEngine{
-		rules: make([]RegexRule, 0),
-	}
+    engine := &RegexEngine{
+        rules: make([]RegexRule, 0),
+    }
+    return engine
+}
 
-	engine.addRule("1001", "SQL Injection (UNION)", `(?i)\bunion\s+(all\s+)?select\b`, domain.SeverityCritical, "QUERY")
-	engine.addRule("1002", "XSS (Script Tag)", `(?i)<script.*?>`, domain.SeverityHigh, "BODY")
-	engine.addRule("1003", "Path Traversal", `\.\./\.\./`, domain.SeverityMedium, "PATH")
-
-	return engine
+func NewRegexEngineWithPath(path string) *RegexEngine {
+    engine := &RegexEngine{
+        rules: make([]RegexRule, 0),
+        rulePath: path,
+    }
+    return engine
 }
 
 func (re *RegexEngine) addRule(id, name, pattern string, sev domain.Severity, target string) {
@@ -95,7 +100,41 @@ func (re *RegexEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 	return events
 }
 
+type regexRuleJSON struct {
+    ID          string            `json:"id"`
+    Name        string            `json:"name"`
+    Pattern     string            `json:"pattern"`
+    Severity    domain.Severity   `json:"severity"`
+    TargetField string            `json:"target"`
+}
+
 func (re *RegexEngine) LoadRules() error {
-	// Placeholder for loading from file system
-	return nil
+    if re.rulePath == "" {
+        return nil
+    }
+    f, err := os.Open(re.rulePath)
+    if err != nil {
+        return err
+    }
+    defer f.Close()
+    var items []regexRuleJSON
+    dec := json.NewDecoder(f)
+    if err := dec.Decode(&items); err != nil {
+        return err
+    }
+    re.rules = make([]RegexRule, 0, len(items))
+    for _, it := range items {
+        compiled, err := regexp.Compile(it.Pattern)
+        if err != nil {
+            continue
+        }
+        re.rules = append(re.rules, RegexRule{
+            id:          it.ID,
+            name:        it.Name,
+            pattern:     compiled,
+            severity:    it.Severity,
+            targetField: it.TargetField,
+        })
+    }
+    return nil
 }

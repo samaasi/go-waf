@@ -1,0 +1,19 @@
+[{
+  "id": "1001",
+  "name": "SQL Injection (UNION)",
+  "pattern": "(?i)\\bunion\\s+(all\\s+)?select\\b",
+  "severity": 25,
+  "target": "QUERY"
+}, {
+  "id": "1002",
+  "name": "XSS (Script Tag)",
+  "pattern": "(?i)<script.*?>",
+  "severity": 10,
+  "target": "BODY"
+}, {
+  "id": "1003",
+  "name": "Path Traversal",
+  "pattern": "\\.\\./\\.\\./",
+  "severity": 5,
+  "target": "PATH"
+}]

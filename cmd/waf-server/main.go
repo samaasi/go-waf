@@ -26,19 +26,21 @@ func main() {
 
 	redisClient := cache.NewRedisClient(cfg.Redis)
 
-	acEngine, err := engines.NewFastMatchEngine("./configs/rules/keywords.json")
-	if err != nil {
-		logger.Log.Fatal("Failed to load keyword rules", zap.Error(err))
-	}
+    acEngine, err := engines.NewFastMatchEngine("./configs/rules/keywords.json")
+    if err != nil {
+        logger.Log.Fatal("Failed to load keyword rules", zap.Error(err))
+    }
 
-	regexEngine := engines.NewRegexEngine()
+    regexEngine := engines.NewRegexEngineWithPath("./configs/rules/regex_rules.json")
+    _ = regexEngine.LoadRules()
+    mlModel := engines.NewStatisticalModel()
 
-	pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine)
+    pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine, mlModel)
 
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	r := routeSetup(pipeline, redisClient, &cfg.Security)
+    r := routeSetup(pipeline, redisClient, &cfg.Security, &cfg.Server)
 
 	addr := fmt.Sprintf(":%s", cfg.Server.Port)
 	logger.Log.Info("Server listening", zap.String("addr", addr))
@@ -47,12 +49,15 @@ func main() {
 	}
 }
 
-func routeSetup(pipeline *analysis.Pipeline, redisClient *cache.RedisClient, secCfg *config.SecurityConfig) *gin.Engine {
-	r := gin.New()
-	r.Use(gin.Recovery())
+func routeSetup(pipeline *analysis.Pipeline, redisClient *cache.RedisClient, secCfg *config.SecurityConfig, srvCfg *config.ServerConfig) *gin.Engine {
+    r := gin.New()
+    r.Use(gin.Recovery())
+    if len(srvCfg.TrustedProxies) > 0 {
+        _ = r.SetTrustedProxies(srvCfg.TrustedProxies)
+    }
 
-	wafMiddleware := middleware.New(pipeline, redisClient, secCfg)
-	r.Use(wafMiddleware.Handler())
+    wafMiddleware := middleware.New(pipeline, redisClient, secCfg, srvCfg, nil)
+    r.Use(wafMiddleware.Handler())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
