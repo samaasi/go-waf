@@ -18,7 +18,7 @@ type WafRequest struct {
 	UserAgent string      `json:"user_agent"`
 	Headers   http.Header `json:"headers"`
 	QueryArgs url.Values  `json:"query_args"`
-	Body      []byte      `json:"body"` // Pre-buffered body
+	Body      []byte      `json:"body"`
 	Protocol  string      `json:"protocol"`
 }
 
@@ -26,5 +26,5 @@ const (
 	ActionAllow     Action = "ALLOW"
 	ActionBlock     Action = "BLOCK"
 	ActionLog       Action = "LOG"
-	ActionChallenge Action = "CHALLENGE" // e.g., Captcha
+	ActionChallenge Action = "CHALLENGE"
 )
