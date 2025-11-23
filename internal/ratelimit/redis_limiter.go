@@ -24,19 +24,20 @@ func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowS
     redisKey := fmt.Sprintf("waf:rl:%s", key)
     now := time.Now().Unix()
     windowStart := now - int64(windowSeconds)
-    z := r.redis.Client
-    if z == nil {
-        return true, 0, fmt.Errorf("redis client not initialized")
+    if r.redis == nil || r.redis.Client == nil {
+        if logger.Log != nil { logger.Log.Error("Rate limiter Redis client missing") }
+        return true, 0, nil
     }
+    z := r.redis.Client
     _, err := z.ZAdd(ctx, redisKey, &redis.Z{Score: float64(now), Member: now}).Result()
     if err != nil {
-        logger.Log.Error("Rate limiter Redis error", zap.Error(err))
+        if logger.Log != nil { logger.Log.Error("Rate limiter Redis error", zap.Error(err)) }
         return true, 0, nil
     }
     _, _ = z.ZRemRangeByScore(ctx, redisKey, "-inf", fmt.Sprintf("%d", windowStart)).Result()
     count, err := z.ZCard(ctx, redisKey).Result()
     if err != nil {
-        logger.Log.Error("Rate limiter Redis error", zap.Error(err))
+        if logger.Log != nil { logger.Log.Error("Rate limiter Redis error", zap.Error(err)) }
         return true, 0, nil
     }
     _ = z.Expire(ctx, redisKey, time.Duration(windowSeconds)*time.Second).Err()

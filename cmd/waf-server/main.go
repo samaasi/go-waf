@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"go-waf/internal/admin"
 	"go-waf/internal/analysis"
 	"go-waf/internal/analysis/engines"
 	"go-waf/internal/config"
@@ -64,7 +65,8 @@ func routeSetup(pipeline *analysis.Pipeline, redisClient *cache.RedisClient, sec
         }
     }
 
-    wafMiddleware := middleware.New(pipeline, redisClient, secCfg, srvCfg, geoProv)
+    adminSvc := admin.NewAdminService(secCfg, pipeline, srvCfg)
+    wafMiddleware := middleware.New(pipeline, redisClient, secCfg, srvCfg, geoProv, adminSvc)
     r.Use(wafMiddleware.Handler())
 
 	r.GET("/health", func(c *gin.Context) {
@@ -74,6 +76,9 @@ func routeSetup(pipeline *analysis.Pipeline, redisClient *cache.RedisClient, sec
 	r.POST("/api/login", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Login successful"})
 	})
+
+    adminHandler := admin.NewAdminHandler(adminSvc)
+    adminHandler.RegisterRoutes(r.Group("/"))
 
 	return r
 }

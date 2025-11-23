@@ -1,15 +1,16 @@
 package engines
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
-	"strings"
+    "encoding/json"
+    "fmt"
+    "os"
+    "strings"
 
-	"go-waf/internal/domain"
-	"go-waf/internal/middleware"
+    "go-waf/internal/domain"
+    "go-waf/internal/middleware"
+    "go-waf/pkg/utils"
 
-	"github.com/cloudflare/ahocorasick"
+    "github.com/cloudflare/ahocorasick"
 )
 
 // FastMatchEngine handles massive keyword lists using the Aho-Corasick algorithm.
@@ -70,26 +71,27 @@ func (e *FastMatchEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEve
 	}
 
 	for _, source := range sources {
-		if len(source) == 0 {
-			continue
-		}
+        if len(source) == 0 {
+            continue
+        }
 
-		sourceUpper := strings.ToUpper(source)
+        sourceNorm := utils.NormalizeString(source)
+        sourceUpper := strings.ToUpper(sourceNorm)
 
 		matches := e.matcher.Match([]byte(sourceUpper))
 
 		for _, matchIdx := range matches {
 			rule := e.rules[matchIdx]
 
-			events = append(events, &domain.SecurityEvent{
-				RuleID:      "AC-" + rule.Pattern,
-				RuleName:    "Keyword: " + rule.Pattern,
-				Severity:    rule.Severity,
-				Message:     rule.Description,
-				MatchedData: rule.Pattern,
-			})
-		}
-	}
+            events = append(events, &domain.SecurityEvent{
+                RuleID:      "AC-" + rule.Pattern,
+                RuleName:    "Keyword: " + rule.Pattern,
+                Severity:    rule.Severity,
+                Message:     rule.Description,
+                MatchedData: rule.Pattern,
+            })
+        }
+    }
 
 	return events
 }

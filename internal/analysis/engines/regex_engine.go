@@ -7,6 +7,7 @@ import (
     "strings"
 
     "go-waf/internal/domain"
+    "go-waf/pkg/utils"
 )
 
 // RegexRule implements domain.Rule
@@ -42,10 +43,11 @@ func (r *RegexRule) Evaluate(req *domain.WafRequest) (bool, string) {
 		searchSpace = req.Path
 	}
 
-	if r.pattern.MatchString(searchSpace) {
-		return true, r.pattern.FindString(searchSpace)
-	}
-	return false, ""
+    normalized := utils.NormalizeString(searchSpace)
+    if r.pattern.MatchString(normalized) {
+        return true, r.pattern.FindString(normalized)
+    }
+    return false, ""
 }
 
 // RegexEngine implements domain.RuleEngine

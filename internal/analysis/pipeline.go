@@ -55,4 +55,8 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
     return domain.ActionAllow, nil
 }
 
-func (p *Pipeline) calculateScore(severity domain.Severity) int { return 0 }
+func (p *Pipeline) CountEngines() int {
+    p.mu.RLock()
+    defer p.mu.RUnlock()
+    return len(p.engines)
+}

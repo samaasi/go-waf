@@ -24,15 +24,17 @@ type WafMiddleware struct {
     cfg         *config.SecurityConfig
     serverCfg   *config.ServerConfig
     geo         geoip.GeoIPProvider
+    stats       interface{ IncAllow(); IncBlock() }
 }
 
-func New(pipeline *analysis.Pipeline, redis *cache.RedisClient, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv geoip.GeoIPProvider) *WafMiddleware {
+func New(pipeline *analysis.Pipeline, redis *cache.RedisClient, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv geoip.GeoIPProvider, stats interface{ IncAllow(); IncBlock() }) *WafMiddleware {
     return &WafMiddleware{
         pipeline:    pipeline,
         rateLimiter: ratelimit.NewRedisLimiter(redis),
         cfg:         cfg,
         serverCfg:   srv,
         geo:         geoProv,
+        stats:       stats,
     }
 }
 
@@ -122,20 +124,22 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
                 zap.Duration("latency", wafLatency),
                 zap.String("matched", event.MatchedData),
             )
+            if m.stats != nil { m.stats.IncBlock() }
 
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error":      "Request blocked by WAF",
-				"request_id": reqID,
-				"reason":     "Security Violation",
-			})
-			return
-		}
+            c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+                "error":      "Request blocked by WAF",
+                "request_id": reqID,
+                "reason":     "Security Violation",
+            })
+            return
+        }
 
-		// Add metadata for the downstream application
-		c.Set("X-WAF-Latency", wafLatency)
+        if m.stats != nil { m.stats.IncAllow() }
+        // Add metadata for the downstream application
+        c.Set("X-WAF-Latency", wafLatency)
         c.Set("X-Request-ID", reqID)
         c.Writer.Header().Set("X-Request-ID", reqID)
 
-		c.Next()
+        c.Next()
 	}
 }
