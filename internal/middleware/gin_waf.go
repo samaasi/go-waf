@@ -1,9 +1,7 @@
 package middleware
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -60,10 +58,11 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 
 		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
 
-		var bodyBytes []byte
-		if c.Request.Body != nil {
-			bodyBytes, _ = io.ReadAll(c.Request.Body)
-			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		bufferedReq, err := SmartReadBody(c.Request)
+		if err != nil {
+			logger.Log.Warn("Body read error", zap.Error(err))
+			c.AbortWithStatus(http.StatusRequestEntityTooLarge)
+			return
 		}
 
 		wafReq := &domain.WafRequest{
@@ -74,7 +73,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			UserAgent: c.Request.UserAgent(),
 			Headers:   c.Request.Header,
 			QueryArgs: c.Request.URL.Query(),
-			Body:      bodyBytes,
+			Body:      bufferedReq.Buffer,
 			Protocol:  c.Request.Proto,
 		}
 
