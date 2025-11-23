@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -48,8 +49,29 @@ func LoadConfig(path string) (*Config, error) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
+	// Defaults for local/dev environments
+	viper.SetDefault("server.port", "8080")
+	viper.SetDefault("server.mode", "debug")
+	viper.SetDefault("server.read_timeout", 30)
+	viper.SetDefault("server.write_timeout", 30)
+
+	viper.SetDefault("redis.host", "127.0.0.1")
+	viper.SetDefault("redis.port", 6379)
+	viper.SetDefault("redis.password", "")
+	viper.SetDefault("redis.db", 0)
+
+	viper.SetDefault("security.block_threshold", 50)
+	viper.SetDefault("security.rate_limit", 100)
+	viper.SetDefault("security.enable_geoip", false)
+
+	viper.SetDefault("log.level", "info")
+
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
+		var nf viper.ConfigFileNotFoundError
+		if !errors.As(err, &nf) {
+			return nil, err
+		}
+		// No config file found; continue with env + defaults
 	}
 
 	var cfg Config
