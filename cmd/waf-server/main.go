@@ -26,9 +26,14 @@ func main() {
 
 	redisClient := cache.NewRedisClient(cfg.Redis)
 
+	acEngine, err := engines.NewFastMatchEngine("./configs/rules/keywords.json")
+	if err != nil {
+		logger.Log.Fatal("Failed to load keyword rules", zap.Error(err))
+	}
+
 	regexEngine := engines.NewRegexEngine()
 
-	pipeline := analysis.NewPipeline(&cfg.Security, regexEngine)
+	pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine)
 
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)

@@ -1,0 +1,32 @@
+[
+  {
+    "pattern": "UNION SELECT",
+    "severity": 25,
+    "description": "SQL Injection: Union based"
+  },
+  {
+    "pattern": "DROP TABLE",
+    "severity": 25,
+    "description": "SQL Injection: Drop table"
+  },
+  {
+    "pattern": "<SCRIPT>",
+    "severity": 10,
+    "description": "XSS: Script tag"
+  },
+  {
+    "pattern": "ALERT(",
+    "severity": 5,
+    "description": "XSS: Alert function"
+  },
+  {
+    "pattern": "../../",
+    "severity": 5,
+    "description": "Path Traversal"
+  },
+  {
+    "pattern": "/ETC/PASSWD",
+    "severity": 25,
+    "description": "LFI: Password file access"
+  }
+]
