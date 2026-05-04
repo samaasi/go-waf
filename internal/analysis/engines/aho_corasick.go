@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"go-waf/internal/domain"
-	"go-waf/pkg/utils"
+	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/pkg/utils"
 
 	"github.com/cloudflare/ahocorasick"
 )

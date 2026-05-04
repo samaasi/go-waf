@@ -5,8 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-
-	"github.com/buger/jsonparser"
 )
 
 // MaxInspectionSize limits how much of the body we inspect to prevent DoS.
@@ -61,46 +59,4 @@ func SmartReadBody(r *http.Request) (*BufferedRequest, error) {
 		Buffer:       validBuffer,
 		IsJSON:       isJSON,
 	}, nil
-}
-
-// ExtractValuesOnly flattens a JSON object and returns ONLY the values.
-// This prevents blocking on keys like {"union": "data"} which is safe,
-// versus {"data": "UNION SELECT"} which is an attack.
-func ExtractValuesOnly(data []byte) []string {
-	var values []string
-
-	var parse func([]byte)
-	parse = func(val []byte) {
-		jsonparser.ArrayEach(val, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			if dataType == jsonparser.String {
-				values = append(values, string(value))
-			} else if dataType == jsonparser.Object || dataType == jsonparser.Array {
-				parse(value)
-			}
-		})
-
-		jsonparser.ObjectEach(val, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			if dataType == jsonparser.String {
-				values = append(values, string(value))
-			} else if dataType == jsonparser.Object || dataType == jsonparser.Array {
-				parse(value)
-			}
-			return nil
-		})
-	}
-
-	// Try parsing as object first, then array
-	if len(data) > 0 {
-		if data[0] == '{' || data[0] == '[' {
-			parse(data)
-		} else {
-			return []string{string(data)}
-		}
-	}
-
-	if len(values) == 0 && len(data) > 0 {
-		return []string{string(data)}
-	}
-
-	return values
 }

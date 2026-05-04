@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"go-waf/internal/domain"
-	"go-waf/internal/middleware"
-	"go-waf/pkg/utils"
+	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/pkg/utils"
 
 	"github.com/corazawaf/libinjection-go"
 )
@@ -67,7 +66,7 @@ func (e *LibinjectionEngine) Evaluate(req *domain.WafRequest) []*domain.Security
 	// Body
 	if len(req.Body) > 0 {
 		if isJSONBody(req.Body) {
-			values := middleware.ExtractValuesOnly(req.Body)
+			values := utils.ExtractValuesOnly(req.Body)
 			for _, v := range values {
 				if matched, fingerprint := e.checkSQLi(v); matched {
 					events = append(events, e.createEvent("SQLI", "SQL Injection in Body", fingerprint))
