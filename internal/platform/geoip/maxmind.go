@@ -6,12 +6,11 @@ import (
 	"sync"
 
 	"github.com/oschwald/geoip2-golang"
+	"github.com/samaasi/go-waf/internal/domain"
 )
 
-type GeoIPProvider interface {
-	GetCountry(ip string) (string, error)
-	Close()
-}
+// Ensure MaxMindDB implements domain.GeoIPProvider
+var _ domain.GeoIPProvider = (*MaxMindDB)(nil)
 
 type MaxMindDB struct {
 	reader *geoip2.Reader
