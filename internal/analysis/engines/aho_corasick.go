@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"go-waf/internal/domain"
-	"go-waf/internal/middleware"
 	"go-waf/pkg/utils"
 
 	"github.com/cloudflare/ahocorasick"
@@ -79,7 +78,7 @@ func (e *FastMatchEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEve
 	// Body
 	if len(req.Body) > 0 {
 		if isJSON(req.Body) {
-			jsonValues := middleware.ExtractValuesOnly(req.Body)
+			jsonValues := utils.ExtractValuesOnly(req.Body)
 			for _, v := range jsonValues {
 				sb.WriteString(v)
 				sb.WriteString(" ")
