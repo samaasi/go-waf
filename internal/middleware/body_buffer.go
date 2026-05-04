@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/buger/jsonparser"
 )
 
 // MaxInspectionSize limits how much of the body we inspect to prevent DoS.
@@ -34,6 +35,19 @@ func SmartReadBody(r *http.Request) (*BufferedRequest, error) {
 
 	validBuffer := buffer[:n]
 
+	// Detect suspicious padding used to bypass the 8KB inspection limit
+	if n >= 1024 {
+		whitespace := 0
+		for i := 0; i < 1024; i++ {
+			if validBuffer[i] <= 32 {
+				whitespace++
+			}
+		}
+		if whitespace > 800 { // >80% whitespace in first 1KB
+			return nil, errors.New("suspicious request padding detected")
+		}
+	}
+
 	r.Body = io.NopCloser(io.MultiReader(bytes.NewReader(validBuffer), r.Body))
 
 	isJSON := false
@@ -55,29 +69,38 @@ func SmartReadBody(r *http.Request) (*BufferedRequest, error) {
 func ExtractValuesOnly(data []byte) []string {
 	var values []string
 
-	// Generic decoding to handle any structure
-	var f interface{}
-	if err := json.Unmarshal(data, &f); err != nil {
-		return []string{string(data)}
+	var parse func([]byte)
+	parse = func(val []byte) {
+		jsonparser.ArrayEach(val, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			if dataType == jsonparser.String {
+				values = append(values, string(value))
+			} else if dataType == jsonparser.Object || dataType == jsonparser.Array {
+				parse(value)
+			}
+		})
+
+		jsonparser.ObjectEach(val, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			if dataType == jsonparser.String {
+				values = append(values, string(value))
+			} else if dataType == jsonparser.Object || dataType == jsonparser.Array {
+				parse(value)
+			}
+			return nil
+		})
 	}
 
-	// Recursive extractor
-	var recurse func(interface{})
-	recurse = func(v interface{}) {
-		switch vv := v.(type) {
-		case string:
-			values = append(values, vv)
-		case map[string]interface{}:
-			for _, mapVal := range vv {
-				recurse(mapVal)
-			}
-		case []interface{}:
-			for _, sliceVal := range vv {
-				recurse(sliceVal)
-			}
+	// Try parsing as object first, then array
+	if len(data) > 0 {
+		if data[0] == '{' || data[0] == '[' {
+			parse(data)
+		} else {
+			return []string{string(data)}
 		}
 	}
 
-	recurse(f)
+	if len(values) == 0 && len(data) > 0 {
+		return []string{string(data)}
+	}
+
 	return values
 }
