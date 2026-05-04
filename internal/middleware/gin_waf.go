@@ -10,13 +10,10 @@ import (
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/internal/platform/cache"
-	"github.com/samaasi/go-waf/internal/platform/geoip"
-	"github.com/samaasi/go-waf/internal/platform/logger"
 	"github.com/samaasi/go-waf/internal/ratelimit"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
 type WafMiddleware struct {
@@ -24,14 +21,15 @@ type WafMiddleware struct {
 	rateLimiter ratelimit.Limiter
 	cfg         *config.SecurityConfig
 	serverCfg   *config.ServerConfig
-	geo         geoip.GeoIPProvider
+	geo         domain.GeoIPProvider
+	logger      domain.Logger
 	stats       interface {
 		IncAllow()
 		IncBlock()
 	}
 }
 
-func New(pipeline *analysis.Pipeline, redis *cache.RedisClient, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv geoip.GeoIPProvider, stats interface {
+func New(pipeline *analysis.Pipeline, redis *cache.RedisClient, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv domain.GeoIPProvider, log domain.Logger, stats interface {
 	IncAllow()
 	IncBlock()
 }) *WafMiddleware {
@@ -41,6 +39,7 @@ func New(pipeline *analysis.Pipeline, redis *cache.RedisClient, cfg *config.Secu
 		cfg:         cfg,
 		serverCfg:   srv,
 		geo:         geoProv,
+		logger:      log,
 		stats:       stats,
 	}
 }
@@ -51,7 +50,6 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 		reqID := uuid.New().String()
 
 		clientIP := c.ClientIP()
-		// Security Hardening: If no trusted proxies are configured, strictly use RemoteAddr to prevent spoofing
 		if len(m.serverCfg.TrustedProxies) == 0 {
 			if ip, _, err := net.SplitHostPort(c.Request.RemoteAddr); err == nil {
 				clientIP = ip
@@ -66,7 +64,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 		)
 
 		if err != nil {
-			logger.Log.Error("Rate Limit check failed", zap.Error(err))
+			m.logger.Error("Rate Limit check failed", domain.Any("error", err))
 			if !m.cfg.RateLimitFailOpen {
 				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
 					"error": "Security service unavailable",
@@ -76,7 +74,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			}
 		} else if !allowed {
 			if remaining == -1 {
-				logger.Log.Warn("Behavioral Block Active", zap.String("ip", clientIP))
+				m.logger.Warn("Behavioral Block Active", domain.String("ip", clientIP))
 				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 					"error":  "Access denied due to suspicious behavior",
 					"code":   "BEHAVIORAL_BLOCK",
@@ -84,7 +82,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 				})
 				return
 			}
-			logger.Log.Warn("Rate Limit Exceeded", zap.String("ip", clientIP), zap.String("path", c.Request.URL.Path))
+			m.logger.Warn("Rate Limit Exceeded", domain.String("ip", clientIP), domain.String("path", c.Request.URL.Path))
 			c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", m.cfg.RateLimit))
 			c.Header("X-RateLimit-Remaining", "0")
 			c.Header("Retry-After", fmt.Sprintf("%d", m.cfg.RateLimitWindowSeconds))
@@ -104,7 +102,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 
 		bufferedReq, err := SmartReadBody(c.Request)
 		if err != nil {
-			logger.Log.Warn("Body read error", zap.Error(err))
+			m.logger.Warn("Body read error", domain.Any("error", err))
 			c.AbortWithStatus(http.StatusRequestEntityTooLarge)
 			return
 		}
@@ -158,12 +156,12 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			}
 			_ = m.rateLimiter.ReportViolation(c.Request.Context(), clientIP, violationScore)
 
-			logger.Log.Warn("WAF Blocked Request",
-				zap.String("req_id", reqID),
-				zap.String("rule", event.RuleName),
-				zap.String("ip", clientIP),
-				zap.Duration("latency", wafLatency),
-				zap.String("matched", event.MatchedData),
+			m.logger.Warn("WAF Blocked Request",
+				domain.String("req_id", reqID),
+				domain.String("rule", event.RuleName),
+				domain.String("ip", clientIP),
+				domain.Any("latency", wafLatency),
+				domain.String("matched", event.MatchedData),
 			)
 			if m.stats != nil {
 				m.stats.IncBlock()
@@ -196,10 +194,10 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			resVerdict, resEvent := m.pipeline.InspectResponse(dlpWriter.CapturedBody())
 
 			if resVerdict == domain.ActionBlock {
-				logger.Log.Error("DLP Violation Blocked",
-					zap.String("req_id", reqID),
-					zap.String("rule", resEvent.RuleName),
-					zap.String("ip", clientIP),
+				m.logger.Error("DLP Violation Blocked",
+					domain.String("req_id", reqID),
+					domain.String("rule", resEvent.RuleName),
+					domain.String("ip", clientIP),
 				)
 
 				// Critical: Clear the gated buffer and override with 403

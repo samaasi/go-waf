@@ -22,10 +22,11 @@ func BenchmarkWafPipelineFull(b *testing.B) {
 	_ = regexEngine.LoadRules()
 	mlModel := engines.NewStatisticalModel()
 	libInj := engines.NewLibinjectionEngine()
-	celEngine, _ := engines.NewCelEngine("../configs/rules/cel_rules.json")
+	noopLog := &domain.NoopLogger{}
+	celEngine, _ := engines.NewCelEngine("../configs/rules/cel_rules.json", noopLog)
 	_ = celEngine.LoadRules()
 
-	pipeline := analysis.NewPipeline(secCfg, acEngine, regexEngine, mlModel, libInj, celEngine)
+	pipeline := analysis.NewPipeline(secCfg, noopLog, acEngine, regexEngine, mlModel, libInj, celEngine)
 
 	req := &domain.WafRequest{
 		ID:        "bench-full",

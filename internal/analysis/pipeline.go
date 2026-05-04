@@ -6,25 +6,24 @@ import (
 	"github.com/samaasi/go-waf/internal/analysis/engines"
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
-	"github.com/samaasi/go-waf/internal/platform/logger"
-
-	"go.uber.org/zap"
 )
 
 type Pipeline struct {
 	cfg       *config.SecurityConfig
 	engines   []domain.RuleEngine
 	dlpEngine *engines.DlpEngine
+	logger    domain.Logger
 	mu        sync.RWMutex
 	scorer    *Scorer
 }
 
-func NewPipeline(cfg *config.SecurityConfig, ruleEngines ...domain.RuleEngine) *Pipeline {
+func NewPipeline(cfg *config.SecurityConfig, log domain.Logger, ruleEngines ...domain.RuleEngine) *Pipeline {
 	dlp, _ := engines.NewDlpEngine("./configs/rules/dlp_rules.json")
 	return &Pipeline{
 		cfg:       cfg,
 		engines:   ruleEngines,
 		dlpEngine: dlp,
+		logger:    log,
 		scorer:    NewScorer(),
 	}
 }
@@ -41,17 +40,17 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 		}
 		totalScore += p.scorer.CalculateScore(events)
 		for _, event := range events {
-			logger.Log.Debug("Rule Matched",
-				zap.String("rule", event.RuleName),
-				zap.Int("severity", int(event.Severity)),
+			p.logger.Debug("Rule Matched",
+				domain.String("rule", event.RuleName),
+				domain.Int("severity", int(event.Severity)),
 			)
 		}
 	}
 
 	if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
-		logger.Log.Warn("Request Blocked",
-			zap.String("req_id", req.ID),
-			zap.Int("total_score", totalScore),
+		p.logger.Warn("Request Blocked",
+			domain.String("req_id", req.ID),
+			domain.Int("total_score", totalScore),
 		)
 		return domain.ActionBlock, firstEvent
 	}

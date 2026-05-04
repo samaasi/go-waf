@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/cel-go/cel"
 	"github.com/samaasi/go-waf/internal/domain"
-	"github.com/samaasi/go-waf/internal/platform/logger"
-	"go.uber.org/zap"
 )
 
 type CelRule struct {
@@ -23,9 +21,10 @@ type CelEngine struct {
 	env      *cel.Env
 	rules    []CelRule
 	rulePath string
+	logger   domain.Logger
 }
 
-func NewCelEngine(rulePath string) (*CelEngine, error) {
+func NewCelEngine(rulePath string, log domain.Logger) (*CelEngine, error) {
 	env, err := cel.NewEnv(
 		cel.Variable("method", cel.StringType),
 		cel.Variable("path", cel.StringType),
@@ -41,6 +40,7 @@ func NewCelEngine(rulePath string) (*CelEngine, error) {
 	return &CelEngine{
 		env:      env,
 		rulePath: rulePath,
+		logger:   log,
 	}, nil
 }
 
@@ -66,7 +66,7 @@ func (e *CelEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
 	for _, rule := range e.rules {
 		out, _, err := rule.Program.Eval(data)
 		if err != nil {
-			logger.Log.Debug("CEL Eval Error (Ignored)", zap.String("rule_id", rule.ID), zap.Error(err))
+			e.logger.Debug("CEL Eval Error (Ignored)", domain.String("rule_id", rule.ID), domain.Any("error", err))
 			continue
 		}
 
@@ -114,6 +114,6 @@ func (e *CelEngine) LoadRules() error {
 	}
 
 	e.rules = rules
-	logger.Log.Info("Loaded CEL rules", zap.Int("count", len(e.rules)))
+	e.logger.Info("Loaded CEL rules", domain.Int("count", len(e.rules)))
 	return nil
 }

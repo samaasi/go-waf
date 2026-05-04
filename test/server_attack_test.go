@@ -12,39 +12,40 @@ import (
     "github.com/samaasi/go-waf/internal/admin"
     "github.com/samaasi/go-waf/internal/analysis"
     "github.com/samaasi/go-waf/internal/analysis/engines"
-    "github.com/samaasi/go-waf/internal/config"
-    "github.com/samaasi/go-waf/internal/middleware"
-    "github.com/samaasi/go-waf/internal/platform/logger"
+	"github.com/samaasi/go-waf/internal/config"
+	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/internal/middleware"
 )
 
 // buildTestServer creates a Gin router with WAF middleware and a simple echo route
 func buildTestServer() (*gin.Engine, *admin.AdminService) {
-    gin.SetMode(gin.TestMode)
-    logger.Init("debug")
-    sec := &config.SecurityConfig{BlockThreshold: 10, RateLimit: 100, RateLimitWindowSeconds: 1}
-    srv := &config.ServerConfig{MaxBodyMB: 2}
-    ac, _ := engines.NewFastMatchEngine("./configs/rules/keywords.json")
-    re := engines.NewRegexEngineWithPath("./configs/rules/regex_rules.json")
-    _ = re.LoadRules()
-    ml := engines.NewStatisticalModel()
-    if ac != nil {
-        pl := analysis.NewPipeline(sec, ac, re, ml)
-        svc := admin.NewAdminService(sec, pl, srv)
-        mw := middleware.New(pl, nil, sec, srv, nil, svc)
-        r := gin.New()
-        r.Use(mw.Handler())
-        r.POST("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
-        r.GET("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
-        return r, svc
-    }
-    pl := analysis.NewPipeline(sec, re, ml)
-    svc := admin.NewAdminService(sec, pl, srv)
-    mw := middleware.New(pl, nil, sec, srv, nil, svc)
-    r := gin.New()
-    r.Use(mw.Handler())
-    r.POST("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
-    r.GET("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
-    return r, svc
+	gin.SetMode(gin.TestMode)
+	sec := &config.SecurityConfig{BlockThreshold: 10, RateLimit: 100, RateLimitWindowSeconds: 1}
+	srv := &config.ServerConfig{MaxBodyMB: 2}
+	noopLog := &domain.NoopLogger{}
+
+	ac, _ := engines.NewFastMatchEngine("./configs/rules/keywords.json")
+	re := engines.NewRegexEngineWithPath("./configs/rules/regex_rules.json")
+	_ = re.LoadRules()
+	ml := engines.NewStatisticalModel()
+	if ac != nil {
+		pl := analysis.NewPipeline(sec, noopLog, ac, re, ml)
+		svc := admin.NewAdminService(sec, pl, srv)
+		mw := middleware.New(pl, nil, sec, srv, nil, noopLog, svc)
+		r := gin.New()
+		r.Use(mw.Handler())
+		r.POST("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+		r.GET("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+		return r, svc
+	}
+	pl := analysis.NewPipeline(sec, noopLog, re, ml)
+	svc := admin.NewAdminService(sec, pl, srv)
+	mw := middleware.New(pl, nil, sec, srv, nil, noopLog, svc)
+	r := gin.New()
+	r.Use(mw.Handler())
+	r.POST("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+	r.GET("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
+	return r, svc
 }
 
 func TestReplayAttackSamples_Blocking(t *testing.T) {
