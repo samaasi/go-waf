@@ -1,9 +1,10 @@
 package middleware
 
 import (
-    "fmt"
-    "net/http"
-    "time"
+	"fmt"
+	"net"
+	"net/http"
+	"time"
 
     "go-waf/internal/analysis"
     "go-waf/internal/config"
@@ -42,29 +43,44 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		reqID := uuid.New().String()
+
 		clientIP := c.ClientIP()
-        allowed, remaining, err := m.rateLimiter.Allow(
-            c.Request.Context(),
-            clientIP+":"+c.Request.URL.Path,
-            m.cfg.RateLimit,
-            m.cfg.RateLimitWindowSeconds,
-        )
+		// Security Hardening: If no trusted proxies are configured, strictly use RemoteAddr to prevent spoofing
+		if len(m.serverCfg.TrustedProxies) == 0 {
+			if ip, _, err := net.SplitHostPort(c.Request.RemoteAddr); err == nil {
+				clientIP = ip
+			}
+		}
+
+		allowed, remaining, err := m.rateLimiter.Allow(
+			c.Request.Context(),
+			clientIP+":"+c.Request.URL.Path,
+			m.cfg.RateLimit,
+			m.cfg.RateLimitWindowSeconds,
+		)
 
 		if err != nil {
 			logger.Log.Error("Rate Limit check failed", zap.Error(err))
+			if !m.cfg.RateLimitFailOpen {
+				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+					"error": "Security service unavailable",
+					"code":  "RATE_LIMIT_ERROR",
+				})
+				return
+			}
 		} else if !allowed {
-			logger.Log.Warn("Rate Limit Exceeded", zap.String("ip", clientIP))
+			logger.Log.Warn("Rate Limit Exceeded", zap.String("ip", clientIP), zap.String("path", c.Request.URL.Path))
 			c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", m.cfg.RateLimit))
-            c.Header("X-RateLimit-Remaining", "0")
-            c.Header("Retry-After", fmt.Sprintf("%d", m.cfg.RateLimitWindowSeconds))
-            c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-                "error": "Too many requests",
-                "code":  "RATE_LIMIT_EXCEEDED",
-            })
-            return
-        }
+			c.Header("X-RateLimit-Remaining", "0")
+			c.Header("Retry-After", fmt.Sprintf("%d", m.cfg.RateLimitWindowSeconds))
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"error": "Too many requests",
+				"code":  "RATE_LIMIT_EXCEEDED",
+			})
+			return
+		}
 
-        c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
+		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
 
         if m.serverCfg != nil && m.serverCfg.MaxBodyMB > 0 && c.Request.Body != nil {
             maxBytes := int64(m.serverCfg.MaxBodyMB) * 1024 * 1024
