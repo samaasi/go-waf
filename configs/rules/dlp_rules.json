@@ -1,0 +1,22 @@
+[
+  {
+    "pattern": "4111-1111-1111-1111",
+    "description": "Test Visa Credit Card Number"
+  },
+  {
+    "pattern": "555-01-9999",
+    "description": "US Social Security Number (Dummy)"
+  },
+  {
+    "pattern": "DATABASE_ERROR_TRACE_ID:",
+    "description": "Sensitive Database Trace Information"
+  },
+  {
+    "pattern": "PRIVATE_KEY-----",
+    "description": "Potential Private Key Exposure"
+  },
+  {
+    "pattern": "AWS_SECRET_ACCESS_KEY",
+    "description": "AWS Secret Key Exposure"
+  }
+]
