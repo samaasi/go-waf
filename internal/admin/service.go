@@ -4,8 +4,8 @@ import (
     "sync"
     "sync/atomic"
 
-    "go-waf/internal/analysis"
-    "go-waf/internal/config"
+    "github.com/samaasi/go-waf/internal/analysis"
+    "github.com/samaasi/go-waf/internal/config"
 )
 
 type AdminService struct {

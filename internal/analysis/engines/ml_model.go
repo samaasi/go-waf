@@ -3,8 +3,8 @@ package engines
 import (
 	"strings"
 
-	"go-waf/internal/domain"
-	"go-waf/pkg/utils"
+	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/pkg/utils"
 )
 
 // StatisticalModel detects anomalies based on heuristics and math.

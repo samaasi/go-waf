@@ -1,7 +1,7 @@
 package analysis
 
 import (
-	"go-waf/internal/domain"
+	"github.com/samaasi/go-waf/internal/domain"
 )
 
 // Scorer centralizes the logic of converting severities into a threat score.

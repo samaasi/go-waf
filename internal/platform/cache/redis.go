@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"go-waf/internal/config"
-	"go-waf/internal/platform/logger"
+	"github.com/samaasi/go-waf/internal/config"
+	"github.com/samaasi/go-waf/internal/platform/logger"
 
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"

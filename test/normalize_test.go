@@ -2,7 +2,7 @@ package test
 
 import (
     "testing"
-    "go-waf/pkg/utils"
+    "github.com/samaasi/go-waf/pkg/utils"
 )
 
 func TestNormalizeString_URL_HTML_Unicode(t *testing.T) {

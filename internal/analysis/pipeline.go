@@ -3,10 +3,10 @@ package analysis
 import (
 	"sync"
 
-	"go-waf/internal/analysis/engines"
-	"go-waf/internal/config"
-	"go-waf/internal/domain"
-	"go-waf/internal/platform/logger"
+	"github.com/samaasi/go-waf/internal/analysis/engines"
+	"github.com/samaasi/go-waf/internal/config"
+	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/internal/platform/logger"
 
 	"go.uber.org/zap"
 )

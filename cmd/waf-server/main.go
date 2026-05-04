@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"go-waf/internal/admin"
-	"go-waf/internal/analysis"
-	"go-waf/internal/analysis/engines"
-	"go-waf/internal/config"
-	"go-waf/internal/middleware"
-	"go-waf/internal/platform/cache"
-	"go-waf/internal/platform/geoip"
-	"go-waf/internal/platform/logger"
+	"github.com/samaasi/go-waf/internal/admin"
+	"github.com/samaasi/go-waf/internal/analysis"
+	"github.com/samaasi/go-waf/internal/analysis/engines"
+	"github.com/samaasi/go-waf/internal/config"
+	"github.com/samaasi/go-waf/internal/middleware"
+	"github.com/samaasi/go-waf/internal/platform/cache"
+	"github.com/samaasi/go-waf/internal/platform/geoip"
+	"github.com/samaasi/go-waf/internal/platform/logger"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -37,8 +37,10 @@ func main() {
 	_ = regexEngine.LoadRules()
 	mlModel := engines.NewStatisticalModel()
 	libInj := engines.NewLibinjectionEngine()
+	celEngine, _ := engines.NewCelEngine("./configs/rules/cel_rules.json")
+	_ = celEngine.LoadRules()
 
-	pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine, mlModel, libInj)
+	pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine, mlModel, libInj, celEngine)
 
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)

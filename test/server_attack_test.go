@@ -9,12 +9,12 @@ import (
     "testing"
 
     "github.com/gin-gonic/gin"
-    "go-waf/internal/admin"
-    "go-waf/internal/analysis"
-    "go-waf/internal/analysis/engines"
-    "go-waf/internal/config"
-    "go-waf/internal/middleware"
-    "go-waf/internal/platform/logger"
+    "github.com/samaasi/go-waf/internal/admin"
+    "github.com/samaasi/go-waf/internal/analysis"
+    "github.com/samaasi/go-waf/internal/analysis/engines"
+    "github.com/samaasi/go-waf/internal/config"
+    "github.com/samaasi/go-waf/internal/middleware"
+    "github.com/samaasi/go-waf/internal/platform/logger"
 )
 
 // buildTestServer creates a Gin router with WAF middleware and a simple echo route

@@ -3,8 +3,8 @@ package test
 import (
     "net/url"
     "testing"
-    "go-waf/internal/analysis/engines"
-    "go-waf/internal/domain"
+    "github.com/samaasi/go-waf/internal/analysis/engines"
+    "github.com/samaasi/go-waf/internal/domain"
 )
 
 func TestRegexEngine_NormalizedMatch(t *testing.T) {
