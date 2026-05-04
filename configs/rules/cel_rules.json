@@ -1,0 +1,20 @@
+[
+  {
+    "id": "CEL-BLOCK-PYTHON",
+    "name": "Block Python Requests to Admin",
+    "expression": "path.startsWith('/admin') && headers.exists(h, h == 'User-Agent' && headers[h].exists(v, v.contains('Python')))",
+    "severity": 3
+  },
+  {
+    "id": "CEL-BLOCK-DEBUG",
+    "name": "Block Debug Param in Production",
+    "expression": "query.exists(k, k == 'debug' && query[k].exists(v, v == 'true'))",
+    "severity": 2
+  },
+  {
+    "id": "CEL-GEO-BLOCK",
+    "name": "Block Sensitive Path for IP range",
+    "expression": "path.contains('config') && remote_ip.startsWith('10.0.')",
+    "severity": 4
+  }
+]
