@@ -1,16 +1,16 @@
 package engines
 
 import (
-    "encoding/json"
-    "fmt"
-    "os"
-    "strings"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
 
-    "go-waf/internal/domain"
-    "go-waf/internal/middleware"
-    "go-waf/pkg/utils"
+	"go-waf/internal/domain"
+	"go-waf/internal/middleware"
+	"go-waf/pkg/utils"
 
-    "github.com/cloudflare/ahocorasick"
+	"github.com/cloudflare/ahocorasick"
 )
 
 // FastMatchEngine handles massive keyword lists using the Aho-Corasick algorithm.
@@ -59,39 +59,64 @@ func (e *FastMatchEngine) Severity() domain.Severity { return domain.SeverityMed
 
 func (e *FastMatchEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
-	sources := []string{req.Path, req.QueryArgs.Encode()}
+	var sb strings.Builder
 
+	// Build a single search space for efficient one-pass Aho-Corasick matching
+	// Path + Query
+	sb.WriteString(req.Path)
+	sb.WriteString(" ")
+	sb.WriteString(req.QueryArgs.Encode())
+	sb.WriteString(" ")
+
+	// Headers
+	for k, v := range req.Headers {
+		sb.WriteString(k)
+		sb.WriteString(":")
+		sb.WriteString(strings.Join(v, ","))
+		sb.WriteString(" ")
+	}
+
+	// Body
 	if len(req.Body) > 0 {
 		if isJSON(req.Body) {
 			jsonValues := middleware.ExtractValuesOnly(req.Body)
-			sources = append(sources, jsonValues...)
+			for _, v := range jsonValues {
+				sb.WriteString(v)
+				sb.WriteString(" ")
+			}
 		} else {
-			sources = append(sources, string(req.Body))
+			sb.Write(req.Body)
 		}
 	}
 
-	for _, source := range sources {
-        if len(source) == 0 {
-            continue
-        }
+	fullSearchSpace := sb.String()
+	if len(fullSearchSpace) == 0 {
+		return nil
+	}
 
-        sourceNorm := utils.NormalizeString(source)
-        sourceUpper := strings.ToUpper(sourceNorm)
+	normalized := utils.NormalizeString(fullSearchSpace)
+	upper := strings.ToUpper(normalized)
 
-		matches := e.matcher.Match([]byte(sourceUpper))
+	matches := e.matcher.Match([]byte(upper))
 
-		for _, matchIdx := range matches {
-			rule := e.rules[matchIdx]
+	// Dedup events by rule ID to avoid spamming multiple matches of the same rule in the same request
+	seen := make(map[string]bool)
 
-            events = append(events, &domain.SecurityEvent{
-                RuleID:      "AC-" + rule.Pattern,
-                RuleName:    "Keyword: " + rule.Pattern,
-                Severity:    rule.Severity,
-                Message:     rule.Description,
-                MatchedData: rule.Pattern,
-            })
-        }
-    }
+	for _, matchIdx := range matches {
+		rule := e.rules[matchIdx]
+		if seen[rule.Pattern] {
+			continue
+		}
+		seen[rule.Pattern] = true
+
+		events = append(events, &domain.SecurityEvent{
+			RuleID:      "AC-" + rule.Pattern,
+			RuleName:    "Keyword: " + rule.Pattern,
+			Severity:    rule.Severity,
+			Message:     rule.Description,
+			MatchedData: rule.Pattern,
+		})
+	}
 
 	return events
 }
@@ -114,7 +139,7 @@ func loadRulesFromJSON(path string) ([]KeywordRule, error) {
 }
 
 func (e *FastMatchEngine) LoadRules() error {
-	//@TODO: Hot reloading
+	// @TODO: Hot reloading
 	return nil
 }
 
