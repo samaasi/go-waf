@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/samaasi/go-waf/internal/admin"
 	"github.com/samaasi/go-waf/internal/analysis"
@@ -44,7 +46,19 @@ func main() {
 	celEngine, _ := engines.NewCelEngine("./configs/rules/cel_rules.json", domainLogger)
 	_ = celEngine.LoadRules()
 
-	pipeline := analysis.NewPipeline(&cfg.Security, domainLogger, acEngine, regexEngine, mlModel, libInj, celEngine)
+	var ruleEngines []domain.RuleEngine
+	ruleEngines = append(ruleEngines, acEngine, regexEngine, mlModel, libInj, celEngine)
+
+	// Optional: Load WASM Plugin Engine if a plugin exists
+	wasmPath := "./plugins/security_v1.wasm"
+	if _, err := os.Stat(wasmPath); err == nil {
+		if wasmEngine, err := engines.NewWasmEngine(context.Background(), wasmPath, domainLogger); err == nil {
+			ruleEngines = append(ruleEngines, wasmEngine)
+			domainLogger.Info("Loaded WASM Plugin Engine", domain.String("path", wasmPath))
+		}
+	}
+
+	pipeline := analysis.NewPipeline(&cfg.Security, domainLogger, ruleEngines...)
 
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
