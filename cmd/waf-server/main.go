@@ -36,8 +36,9 @@ func main() {
 	regexEngine := engines.NewRegexEngineWithPath("./configs/rules/regex_rules.json")
 	_ = regexEngine.LoadRules()
 	mlModel := engines.NewStatisticalModel()
+	libInj := engines.NewLibinjectionEngine()
 
-    pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine, mlModel)
+	pipeline := analysis.NewPipeline(&cfg.Security, acEngine, regexEngine, mlModel, libInj)
 
 	if cfg.Server.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
