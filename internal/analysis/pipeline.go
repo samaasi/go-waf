@@ -117,6 +117,13 @@ func (p *Pipeline) InspectResponse(body []byte) (domain.Action, *domain.Security
 	return domain.ActionAllow, nil, body
 }
 
+func (p *Pipeline) UpdateConfig(newCfg *config.SecurityConfig) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.cfg = newCfg
+	p.logger.Info("Security configuration updated dynamically")
+}
+
 func (p *Pipeline) CountEngines() int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()

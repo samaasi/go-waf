@@ -46,6 +46,7 @@ type SecurityConfig struct {
     BlockThreshold int  `mapstructure:"block_threshold"`
     RateLimit      int  `mapstructure:"rate_limit"`
     EnableGeoIP    bool `mapstructure:"enable_geoip"`
+    EnableBotShield bool `mapstructure:"enable_bot_shield"`
     RateLimitWindowSeconds int `mapstructure:"rate_limit_window_seconds"`
     RateLimitFailOpen bool `mapstructure:"rate_limit_fail_open"`
     AllowCountries []string `mapstructure:"allow_countries"`
@@ -98,6 +99,7 @@ func LoadConfig(path string) (*Config, error) {
     viper.SetDefault("security.block_threshold", 50)
     viper.SetDefault("security.rate_limit", 100)
     viper.SetDefault("security.enable_geoip", false)
+    viper.SetDefault("security.enable_bot_shield", false)
     viper.SetDefault("security.rate_limit_window_seconds", 1)
     viper.SetDefault("security.rate_limit_fail_open", true)
     viper.SetDefault("security.allow_countries", []string{})
