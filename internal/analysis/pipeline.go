@@ -37,8 +37,6 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 	var firstEvent *domain.SecurityEvent
 	var mu sync.Mutex
 
-	// 1. Critical/Fast Engines (Negative Model) - Sequential for early exit
-	// We assume engines[0] and engines[1] are fast (AC/Regex)
 	for i := 0; i < len(p.engines) && i < 2; i++ {
 		events := p.engines[i].Evaluate(req)
 		if len(events) > 0 {
@@ -53,13 +51,10 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 		}
 	}
 
-	// 2. Heavy Engines (Positive Model, ML, WASM) - Parallel
 	if len(p.engines) > 2 {
 		g, gCtx := errgroup.WithContext(context.Background())
 		for _, engine := range p.engines[2:] {
-			engine := engine
 			g.Go(func() error {
-				// Check if already blocked by another goroutine
 				select {
 				case <-gCtx.Done():
 					return nil
@@ -75,7 +70,6 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 					}
 					totalScore += p.scorer.CalculateScore(events)
 					if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
-						// Return error to trigger context cancellation for others
 						return fmt.Errorf("threshold reached")
 					}
 				}
@@ -96,7 +90,6 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 	return domain.ActionAllow, nil
 }
 
-// InspectResponse scans outbound response bodies for sensitive data
 func (p *Pipeline) InspectResponse(body []byte) (domain.Action, *domain.SecurityEvent) {
 	if p.dlpEngine == nil {
 		return domain.ActionAllow, nil

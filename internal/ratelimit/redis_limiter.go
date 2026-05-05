@@ -43,13 +43,11 @@ local limit = tonumber(ARGV[3])
 local maxScore = tonumber(ARGV[4])
 local clearBefore = now - window
 
-	// Behavioral blocking check
 	local threatScore = tonumber(redis.call('GET', tsKey) or 0)
 if threatScore >= maxScore then
     return {-1, threatScore}
 end
 
-	// Sliding window
 	redis.call('ZREMRANGEBYSCORE', rlKey, '-inf', clearBefore)
 local count = redis.call('ZCARD', rlKey)
 
@@ -95,11 +93,10 @@ func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowS
 	allowed := status == 1
 	remaining := resList[1].(int64)
 
-	// Update L1 Cache
 	if r.l1Cache != nil {
-		expiry := time.Now().Add(1 * time.Second) // default 1s cache
+		expiry := time.Now().Add(1 * time.Second)
 		if status == -1 {
-			expiry = time.Now().Add(1 * time.Minute) // block 1m cache
+			expiry = time.Now().Add(1 * time.Minute)
 			allowed = false
 		}
 		r.l1Cache.Add(key, cacheEntry{allowed: allowed, remaining: remaining, expiry: expiry})
@@ -113,7 +110,6 @@ func (r *RedisLimiter) ReportViolation(ctx context.Context, ip string, score int
 		return nil
 	}
 	tsKey := fmt.Sprintf("waf:ts:%s", ip)
-	// Increment score and set 24h expiration on new violations
 	_, err := r.redis.Client.IncrBy(ctx, tsKey, int64(score)).Result()
 	if err == nil {
 		r.redis.Client.Expire(ctx, tsKey, 24*time.Hour)

@@ -64,7 +64,6 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			}
 		}
 
-		// Rate limiting is optional — skip if no limiter is configured
 		var remaining int64
 		if m.rateLimiter != nil {
 			allowed, rem, err := m.rateLimiter.Allow(
@@ -113,7 +112,6 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
 		}
 
-		// Use buffer pool for body reading
 		buf := bufferPool.Get().(*bytes.Buffer)
 		buf.Reset()
 		defer bufferPool.Put(buf)
@@ -161,11 +159,9 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 
 		verdict, event := m.pipeline.Inspect(wafReq)
 
-		// Log the latency of the WAF itself
 		wafLatency := time.Since(start)
 
 		if verdict == domain.ActionBlock {
-			// Behavioral Escalation: Report this violation to the threat scorer
 			violationScore := 10
 			if event.Severity == domain.SeverityCritical {
 				violationScore = 50
@@ -196,18 +192,15 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 		if m.stats != nil {
 			m.stats.IncAllow()
 		}
-		// Add metadata for the downstream application
 		c.Set("X-WAF-Latency", wafLatency)
 		c.Set("X-Request-ID", reqID)
 		c.Writer.Header().Set("X-Request-ID", reqID)
 
-		// DLP: Wrap the writer to capture response body
 		dlpWriter := NewDlpResponseWriter(c.Writer, 8*1024)
 		c.Writer = dlpWriter
 
 		c.Next()
 
-		// Post-request DLP inspection (Gated Buffer Mode)
 		if dlpWriter.bodyBuffer.Len() > 0 {
 			resVerdict, resEvent := m.pipeline.InspectResponse(dlpWriter.CapturedBody())
 
@@ -218,7 +211,6 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 					domain.String("ip", clientIP),
 				)
 
-				// Critical: Clear the gated buffer and override with 403
 				dlpWriter.bodyBuffer.Reset()
 				dlpWriter.ResponseWriter.WriteHeader(http.StatusForbidden)
 				_, _ = dlpWriter.ResponseWriter.Write([]byte(`{"error": "Sensitive data leak prevented", "code": "DLP_BLOCK"}`))

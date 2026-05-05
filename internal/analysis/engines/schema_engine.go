@@ -66,7 +66,6 @@ func (e *SchemaEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 		return nil
 	}
 
-	// Mock http.Request for validation
 	httpReq, err := http.NewRequest(req.Method, req.Path, bytes.NewReader(req.Body))
 	if err != nil {
 		return nil
@@ -76,7 +75,6 @@ func (e *SchemaEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 
 	route, pathParams, err := router.FindRoute(httpReq)
 	if err != nil {
-		// Path not found in schema - for positive security, this is a violation
 		return []*domain.SecurityEvent{{
 			ID:          "SCHEMA_404",
 			RuleName:    "api_path_not_allowed",
@@ -94,8 +92,6 @@ func (e *SchemaEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 		},
 	}
 
-	// We need to restore the body since NewRequest consumes it if we used a reader
-	// But Kin-OpenAPI reads it from the input.Request.Body
 	if len(req.Body) > 0 {
 		httpReq.Body = io.NopCloser(bytes.NewReader(req.Body))
 	}
