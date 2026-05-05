@@ -64,5 +64,10 @@ func (s *AdminService) GetStats() map[string]interface{} {
 	return stats
 }
 
-func (s *AdminService) IncAllow() { s.allowedCount.Add(1) }
-func (s *AdminService) IncBlock() { s.blockedCount.Add(1) }
+func (s *AdminService) IncAllow(method, status string) { s.allowedCount.Add(1) }
+func (s *AdminService) IncBlock(method, status string) { s.blockedCount.Add(1) }
+
+func (s *AdminService) ObserveLatency(method string, duration float64)           {}
+func (s *AdminService) RecordRuleMatch(ruleID, ruleName, severity string) {}
+func (s *AdminService) RecordGeoIP(countryCode string)           {}
+func (s *AdminService) RecordBot(organization string)             {}

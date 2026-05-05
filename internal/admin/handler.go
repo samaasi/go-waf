@@ -4,13 +4,14 @@ import (
 	"github.com/samaasi/go-waf/internal/errors"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type AdminServicer interface {
 	GetStats() map[string]interface{}
 	UpdateBlockThreshold(newThreshold int)
-	IncAllow()
-	IncBlock()
+	IncAllow(method, status string)
+	IncBlock(method, status string)
 }
 
 type AdminHandler struct {
@@ -26,6 +27,7 @@ func (h *AdminHandler) RegisterRoutes(r *gin.RouterGroup) {
 	{
 		admin.GET("/stats", h.GetStats)
 		admin.POST("/config/threshold", h.UpdateThreshold)
+		admin.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	}
 }
 
