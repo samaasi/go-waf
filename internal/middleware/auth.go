@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"net/http"
+	"github.com/samaasi/go-waf/internal/errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,9 +19,7 @@ func AdminAuth(apiKey string) gin.HandlerFunc {
 		}
 
 		if key != apiKey {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"error": "Unauthorized access to Admin API",
-			})
+			errors.Respond(c, nil, errors.ErrUnauthorized())
 			return
 		}
 
