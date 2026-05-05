@@ -13,6 +13,7 @@ import (
 	"github.com/samaasi/go-waf/internal/analysis"
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/internal/errors"
 	"github.com/samaasi/go-waf/internal/ratelimit"
 
 	"github.com/gin-gonic/gin"
@@ -171,10 +172,11 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 				m.stats.IncBlock()
 			}
 
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error":      "Request blocked by WAF",
-				"request_id": reqID,
-				"reason":     "Security Violation",
+			errors.Respond(c, nil, &errors.AppError{
+				Code:    errors.CodeSecurity,
+				Status:  http.StatusForbidden,
+				Message: "Request blocked by security policy",
+				Hint:    "Contact support if you believe this is an error",
 			})
 			return
 		}
