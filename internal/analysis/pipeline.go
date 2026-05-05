@@ -19,16 +19,21 @@ type Pipeline struct {
 	logger    domain.Logger
 	mu        sync.RWMutex
 	scorer    *Scorer
+	exporter  domain.AuditExporter
 }
 
-func NewPipeline(cfg *config.SecurityConfig, log domain.Logger, dlpRulesPath string, ruleEngines ...domain.RuleEngine) *Pipeline {
+func NewPipeline(cfg *config.SecurityConfig, log domain.Logger, dlpRulesPath string, exporter domain.AuditExporter, ruleEngines ...domain.RuleEngine) *Pipeline {
 	dlp, _ := engines.NewDlpEngine(dlpRulesPath)
+	if exporter == nil {
+		exporter = &domain.NoopAuditExporter{}
+	}
 	return &Pipeline{
 		cfg:       cfg,
 		engines:   ruleEngines,
 		dlpEngine: dlp,
 		logger:    log,
 		scorer:    NewScorer(),
+		exporter:  exporter,
 	}
 }
 
@@ -40,6 +45,7 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 	for i := 0; i < len(p.engines) && i < 2; i++ {
 		events := p.engines[i].Evaluate(req)
 		if len(events) > 0 {
+			p.exporter.Export(events...)
 			if firstEvent == nil {
 				firstEvent = events[0]
 			}
@@ -63,6 +69,7 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 
 				events := engine.Evaluate(req)
 				if len(events) > 0 {
+					p.exporter.Export(events...)
 					mu.Lock()
 					defer mu.Unlock()
 					if firstEvent == nil {
@@ -97,6 +104,7 @@ func (p *Pipeline) InspectResponse(body []byte) (domain.Action, *domain.Security
 
 	events := p.dlpEngine.InspectResponse(body)
 	if len(events) > 0 {
+		p.exporter.Export(events...)
 		return domain.ActionBlock, events[0]
 	}
 

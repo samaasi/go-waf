@@ -13,6 +13,7 @@ import (
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/internal/middleware"
 	"github.com/samaasi/go-waf/internal/platform/geoip"
+	"github.com/samaasi/go-waf/internal/platform/telemetry"
 	"github.com/samaasi/go-waf/internal/ratelimit"
 	"github.com/samaasi/go-waf/internal/store"
 	"github.com/samaasi/go-waf/internal/worker"
@@ -43,7 +44,18 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 	}
 	cleanups = append(cleanups, engineCleanups...)
 
-	pipeline := analysis.NewPipeline(&cfg.Security, log, "./configs/rules/dlp_rules.json", ruleEngines...)
+	var exporter domain.AuditExporter = &domain.NoopAuditExporter{}
+	var workers []worker.Worker
+
+	if cfg.Telemetry.Enabled {
+		cloudExporter := telemetry.NewCloudExporter(1000, log)
+		exporter = cloudExporter
+		telemetryWorker := worker.NewTelemetryWorker(&cfg.Telemetry, cloudExporter.GetQueue(), log)
+		workers = append(workers, telemetryWorker)
+		log.Info("Telemetry enabled", domain.String("collector", cfg.Telemetry.CollectorURL))
+	}
+
+	pipeline := analysis.NewPipeline(&cfg.Security, log, "./configs/rules/dlp_rules.json", exporter, ruleEngines...)
 
 	var geoProv domain.GeoIPProvider
 	if cfg.Security.EnableGeoIP {
@@ -71,10 +83,11 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		"./configs/rules/openapi.yaml",
 	}
 	reloadWorker := worker.NewRuleReloadWorker(ruleEngines, watchPaths, 5*time.Minute, log)
+	workers = append(workers, reloadWorker)
 
 	log.Info("Application wired successfully",
 		domain.Int("engines", len(ruleEngines)),
-		domain.Int("workers", 1),
+		domain.Int("workers", len(workers)),
 	)
 
 	return &App{
@@ -85,7 +98,7 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		AdminSvc:     adminSvc,
 		WAF:          wafMW,
 		AdminHandler: adminHandler,
-		Workers:      []worker.Worker{reloadWorker},
+		Workers:      workers,
 		Cleanup:      cleanup,
 	}, nil
 }
