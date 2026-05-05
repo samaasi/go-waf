@@ -1,8 +1,10 @@
 package admin
 
 import (
+	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/samaasi/go-waf/internal/analysis"
 	"github.com/samaasi/go-waf/internal/config"
@@ -17,6 +19,7 @@ type AdminService struct {
 	mu           sync.RWMutex
 	allowedCount atomic.Int64
 	blockedCount atomic.Int64
+	startTime    time.Time
 }
 
 func NewAdminService(cfg *config.SecurityConfig, pl *analysis.Pipeline, srv *config.ServerConfig, log domain.Logger) *AdminService {
@@ -25,10 +28,10 @@ func NewAdminService(cfg *config.SecurityConfig, pl *analysis.Pipeline, srv *con
 		serverCfg: srv,
 		pipeline:  pl,
 		logger:    log,
+		startTime: time.Now(),
 	}
 }
 
-// GetStats returns simplified runtime stats (point-in-time snapshot)
 func (s *AdminService) GetStats() map[string]interface{} {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -42,11 +45,8 @@ func (s *AdminService) GetStats() map[string]interface{} {
 		"engines_count":             s.pipeline.CountEngines(),
 		"allowed_requests":          s.allowedCount.Load(),
 		"blocked_requests":          s.blockedCount.Load(),
-	}
-	if s.serverCfg != nil {
-		stats["trusted_proxies_count"] = len(s.serverCfg.TrustedProxies)
-		stats["max_body_mb"] = s.serverCfg.MaxBodyMB
-		stats["server_mode"] = s.serverCfg.Mode
+		"uptime_seconds":            int(time.Since(s.startTime).Seconds()),
+		"go_version":                runtime.Version(),
 	}
 	return stats
 }

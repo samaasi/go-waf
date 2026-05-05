@@ -3,6 +3,7 @@ package geoip
 import (
 	"archive/tar"
 	"compress/gzip"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,7 +14,8 @@ import (
 	"github.com/samaasi/go-waf/internal/domain"
 )
 
-// EnsureDatabase checks if a newer version of the database exists and downloads it.
+const maxDatabaseSize = 200 * 1024 * 1024
+
 func EnsureDatabase(editionID, licenseKey, localPath string, log domain.Logger) (bool, error) {
 	if licenseKey == "" {
 		return false, fmt.Errorf("missing MaxMind license key")
@@ -21,8 +23,12 @@ func EnsureDatabase(editionID, licenseKey, localPath string, log domain.Logger) 
 
 	url := fmt.Sprintf("https://download.maxmind.com/app/geoip_download?edition_id=%s&license_key=%s&suffix=tar.gz", editionID, licenseKey)
 
-	// Check remote Last-Modified
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{
+		Timeout: 60 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
+		},
+	}
 	resp, err := client.Head(url)
 	if err != nil {
 		return false, err
@@ -38,7 +44,6 @@ func EnsureDatabase(editionID, licenseKey, localPath string, log domain.Logger) 
 
 	log.Info("Downloading newer GeoIP database", domain.String("edition", editionID))
 
-	// Download and extract
 	resp, err = client.Get(url)
 	if err != nil {
 		return false, err
@@ -68,17 +73,28 @@ func EnsureDatabase(editionID, licenseKey, localPath string, log domain.Logger) 
 		}
 
 		if strings.HasSuffix(header.Name, ".mmdb") {
-			f, err := os.OpenFile(tempPath, os.O_CREATE|os.O_WRONLY, 0644)
+			f, err := os.OpenFile(tempPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
 				return false, err
 			}
-			if _, err := io.Copy(f, tr); err != nil {
-				f.Close()
+
+			written, err := io.Copy(f, io.LimitReader(tr, maxDatabaseSize))
+			f.Close()
+			if err != nil {
+				os.Remove(tempPath)
 				return false, err
 			}
-			f.Close()
+			if written >= maxDatabaseSize {
+				os.Remove(tempPath)
+				return false, fmt.Errorf("database exceeds %d byte limit — possible zip-bomb", maxDatabaseSize)
+			}
 
-			// Atomic swap
+			// Validate the downloaded file is a valid mmdb before swapping
+			if err := validateMMDB(tempPath); err != nil {
+				os.Remove(tempPath)
+				return false, fmt.Errorf("downloaded database validation failed: %w", err)
+			}
+
 			if err := os.Rename(tempPath, localPath); err != nil {
 				return false, err
 			}
@@ -89,4 +105,21 @@ func EnsureDatabase(editionID, licenseKey, localPath string, log domain.Logger) 
 	}
 
 	return false, fmt.Errorf("mmdb file not found in archive")
+}
+
+func validateMMDB(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if info.Size() < 1024 {
+		return fmt.Errorf("file too small to be a valid mmdb (%d bytes)", info.Size())
+	}
+	return nil
 }

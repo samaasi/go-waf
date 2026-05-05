@@ -30,7 +30,7 @@ func buildTestServer() (*gin.Engine, *admin.AdminService) {
 	_ = re.LoadRules()
 	ml := engines.NewStatisticalModel()
 	if ac != nil {
-		pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", ac, re, ml)
+		pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", nil, ac, re, ml)
 		svc := admin.NewAdminService(sec, pl, srv, noopLog)
 		var noopLimiter ratelimit.Limiter
 		mw := middleware.New(pl, noopLimiter, sec, srv, nil, noopLog, svc)
@@ -40,7 +40,7 @@ func buildTestServer() (*gin.Engine, *admin.AdminService) {
 		r.GET("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 		return r, svc
 	}
-	pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", re, ml)
+	pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", nil, re, ml)
 	svc := admin.NewAdminService(sec, pl, srv, noopLog)
 	var noopLimiter ratelimit.Limiter
 	mw := middleware.New(pl, noopLimiter, sec, srv, nil, noopLog, svc)

@@ -111,9 +111,17 @@ func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowS
 		return true, 0, err
 	}
 
-	resList := res.([]interface{})
-	status := resList[0].(int64)
-	remaining := resList[1].(int64)
+	resList, ok := res.([]interface{})
+	if !ok || len(resList) < 2 {
+		r.logger.Error("Unexpected Redis Lua response format")
+		return true, 0, fmt.Errorf("unexpected lua response type")
+	}
+	status, ok1 := resList[0].(int64)
+	remaining, ok2 := resList[1].(int64)
+	if !ok1 || !ok2 {
+		r.logger.Error("Unexpected Redis Lua response value types")
+		return true, 0, fmt.Errorf("unexpected lua response value types")
+	}
 	allowed := status == 1
 
 	if r.l1Cache != nil {

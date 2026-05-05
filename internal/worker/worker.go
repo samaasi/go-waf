@@ -13,7 +13,6 @@ type Worker interface {
 	Start(ctx context.Context) error
 }
 
-
 type RuleReloadWorker struct {
 	engines    []domain.RuleEngine
 	watchPaths []string
@@ -21,7 +20,6 @@ type RuleReloadWorker struct {
 	logger     domain.Logger
 }
 
-// NewRuleReloadWorker creates a worker that reloads rules every `interval`.
 func NewRuleReloadWorker(engines []domain.RuleEngine, watchPaths []string, interval time.Duration, log domain.Logger) *RuleReloadWorker {
 	return &RuleReloadWorker{
 		engines:    engines,
@@ -31,7 +29,6 @@ func NewRuleReloadWorker(engines []domain.RuleEngine, watchPaths []string, inter
 	}
 }
 
-// Start runs the reload loop until the context is cancelled.
 func (w *RuleReloadWorker) Start(ctx context.Context) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -48,6 +45,9 @@ func (w *RuleReloadWorker) Start(ctx context.Context) error {
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
 
+	// Debounce rapid file changes (editors often write multiple times)
+	var debounceTimer *time.Timer
+
 	w.logger.Info("RuleReloadWorker started", domain.Int("watching", len(w.watchPaths)))
 
 	for {
@@ -60,7 +60,12 @@ func (w *RuleReloadWorker) Start(ctx context.Context) error {
 			}
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				w.logger.Info("Rule file change detected", domain.String("file", event.Name))
-				w.reloadAll()
+				if debounceTimer != nil {
+					debounceTimer.Stop()
+				}
+				debounceTimer = time.AfterFunc(2*time.Second, func() {
+					w.reloadAll()
+				})
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
@@ -74,10 +79,21 @@ func (w *RuleReloadWorker) Start(ctx context.Context) error {
 }
 
 func (w *RuleReloadWorker) reloadAll() {
+	failed := 0
 	for _, engine := range w.engines {
 		if err := engine.LoadRules(); err != nil {
-			w.logger.Error("Failed to reload rules", domain.Any("error", err))
+			w.logger.Error("Failed to reload rules for engine — keeping previous rules",
+				domain.Any("error", err),
+			)
+			failed++
 		}
 	}
-	w.logger.Debug("Rules reloaded successfully")
+	if failed == 0 {
+		w.logger.Debug("Rules reloaded successfully")
+	} else {
+		w.logger.Warn("Partial rule reload",
+			domain.Int("failed", failed),
+			domain.Int("total", len(w.engines)),
+		)
+	}
 }

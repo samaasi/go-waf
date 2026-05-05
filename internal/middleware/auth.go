@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crypto/subtle"
+
 	"github.com/samaasi/go-waf/internal/errors"
 
 	"github.com/gin-gonic/gin"
@@ -15,10 +17,11 @@ func AdminAuth(apiKey string) gin.HandlerFunc {
 
 		key := c.GetHeader("X-WAF-Admin-Key")
 		if key == "" {
-			key = c.Query("api_key")
+			errors.Respond(c, nil, errors.ErrUnauthorized())
+			return
 		}
 
-		if key != apiKey {
+		if subtle.ConstantTimeCompare([]byte(key), []byte(apiKey)) != 1 {
 			errors.Respond(c, nil, errors.ErrUnauthorized())
 			return
 		}

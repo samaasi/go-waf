@@ -13,6 +13,7 @@ import (
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/internal/platform/logger"
+	tlsutil "github.com/samaasi/go-waf/internal/platform/tls"
 	"github.com/samaasi/go-waf/internal/server"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,11 @@ func main() {
 	cfg, err := config.LoadConfig(".")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := cfg.Validate(); err != nil {
+		fmt.Fprintf(os.Stderr, "Config validation failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -49,37 +55,52 @@ func main() {
 	router := server.NewRouter(application.WAF, application.AdminHandler, &cfg.Server)
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%s", cfg.Server.Port),
-		Handler:      router,
-		ReadTimeout:  time.Duration(cfg.Server.ReadTimeout) * time.Second,
-		WriteTimeout: time.Duration(cfg.Server.WriteTimeout) * time.Second,
+		Addr:           fmt.Sprintf(":%s", cfg.Server.Port),
+		Handler:        router,
+		ReadTimeout:    time.Duration(cfg.Server.ReadTimeout) * time.Second,
+		WriteTimeout:   time.Duration(cfg.Server.WriteTimeout) * time.Second,
+		IdleTimeout:    time.Duration(cfg.Server.IdleTimeout) * time.Second,
+		MaxHeaderBytes: cfg.Server.MaxHeaderBytes,
+	}
+
+	if cfg.TLS.Enabled {
+		tlsCfg, err := tlsutil.BuildTLSConfig(&cfg.TLS)
+		if err != nil {
+			log.Error("Failed to build TLS config", domain.Any("error", err))
+			os.Exit(1)
+		}
+		srv.TLSConfig = tlsCfg
 	}
 
 	g, gCtx := errgroup.WithContext(ctx)
 
-	// HTTP Server goroutine
 	g.Go(func() error {
-		log.Info("HTTP server listening", domain.String("addr", srv.Addr))
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			return fmt.Errorf("http server: %w", err)
+		if cfg.TLS.Enabled {
+			log.Info("HTTPS server listening", domain.String("addr", srv.Addr))
+			if err := srv.ListenAndServeTLS(cfg.TLS.CertFile, cfg.TLS.KeyFile); err != nil && err != http.ErrServerClosed {
+				return fmt.Errorf("https server: %w", err)
+			}
+		} else {
+			log.Info("HTTP server listening (TLS disabled)", domain.String("addr", srv.Addr))
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				return fmt.Errorf("http server: %w", err)
+			}
 		}
 		return nil
 	})
 
-	// Graceful shutdown goroutine
 	g.Go(func() error {
 		<-gCtx.Done()
 		log.Info("Draining in-flight requests...")
 
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		return srv.Shutdown(shutdownCtx)
 	})
 
-	// Worker goroutines
 	for _, w := range application.Workers {
-		w := w // capture loop variable
+		w := w
 		g.Go(func() error {
 			return w.Start(gCtx)
 		})

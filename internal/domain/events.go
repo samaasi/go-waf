@@ -39,6 +39,10 @@ type SecurityEvent struct {
 	Message     string    `json:"message"`
 	MatchedData string    `json:"matched_data"`
 	Timestamp   time.Time `json:"timestamp"`
+	RemoteIP    string    `json:"remote_ip,omitempty"`
+	Path        string    `json:"path,omitempty"`
+	Method      string    `json:"method,omitempty"`
+	UserAgent   string    `json:"user_agent,omitempty"`
 }
 
 // AuditExporter defines the interface for streaming security events.
