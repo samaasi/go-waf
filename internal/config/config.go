@@ -54,6 +54,12 @@ type SecurityConfig struct {
     OpenAPISchemaPath      string `mapstructure:"openapi_schema_path"`
     MaxMindLicenseKey      string `mapstructure:"maxmind_license_key"`
     GeoIPUpdateIntervalHours int `mapstructure:"geoip_update_interval_hours"`
+    Dlp DlpConfig `mapstructure:"dlp"`
+}
+
+type DlpConfig struct {
+    Enabled bool   `mapstructure:"enabled"`
+    Action  string `mapstructure:"action"` // "block" or "mask"
 }
 
 type LogConfig struct {
@@ -100,6 +106,8 @@ func LoadConfig(path string) (*Config, error) {
     viper.SetDefault("security.openapi_schema_path", "./configs/rules/openapi.yaml")
     viper.SetDefault("security.maxmind_license_key", "")
     viper.SetDefault("security.geoip_update_interval_hours", 24)
+    viper.SetDefault("security.dlp.enabled", false)
+    viper.SetDefault("security.dlp.action", "block")
 
 	viper.SetDefault("log.level", "info")
 

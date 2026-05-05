@@ -180,7 +180,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 		c.Next()
 
 		if dlpWriter.bodyBuffer.Len() > 0 {
-			resVerdict, resEvent := m.pipeline.InspectResponse(dlpWriter.CapturedBody())
+			resVerdict, resEvent, finalBody := m.pipeline.InspectResponse(dlpWriter.CapturedBody())
 
 			if resVerdict == domain.ActionBlock {
 				m.logger.Error("DLP Violation Blocked",
@@ -196,7 +196,13 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 				if !dlpWriter.headerSent {
 					dlpWriter.ResponseWriter.WriteHeader(dlpWriter.status)
 				}
-				_, _ = dlpWriter.ResponseWriter.Write(dlpWriter.CapturedBody())
+				if resEvent != nil && m.cfg.Dlp.Action == "mask" {
+					m.logger.Info("DLP Sensitive Data Masked",
+						domain.String("req_id", reqID),
+						domain.String("rule", resEvent.RuleName),
+					)
+				}
+				_, _ = dlpWriter.ResponseWriter.Write(finalBody)
 			}
 		}
 	}

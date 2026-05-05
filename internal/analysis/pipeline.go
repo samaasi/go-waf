@@ -97,18 +97,24 @@ func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.Secur
 	return domain.ActionAllow, nil
 }
 
-func (p *Pipeline) InspectResponse(body []byte) (domain.Action, *domain.SecurityEvent) {
-	if p.dlpEngine == nil {
-		return domain.ActionAllow, nil
+func (p *Pipeline) InspectResponse(body []byte) (domain.Action, *domain.SecurityEvent, []byte) {
+	if p.dlpEngine == nil || !p.cfg.Dlp.Enabled {
+		return domain.ActionAllow, nil, body
 	}
 
 	events := p.dlpEngine.InspectResponse(body)
 	if len(events) > 0 {
 		p.exporter.Export(events...)
-		return domain.ActionBlock, events[0]
+
+		if p.cfg.Dlp.Action == "mask" {
+			maskedBody := p.dlpEngine.Mask(body)
+			return domain.ActionAllow, events[0], maskedBody
+		}
+
+		return domain.ActionBlock, events[0], body
 	}
 
-	return domain.ActionAllow, nil
+	return domain.ActionAllow, nil, body
 }
 
 func (p *Pipeline) CountEngines() int {
