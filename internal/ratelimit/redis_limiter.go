@@ -6,19 +6,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samaasi/go-waf/internal/platform/cache"
-	"github.com/samaasi/go-waf/internal/platform/logger"
+	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/internal/store"
 
 	"github.com/go-redis/redis/v8"
-	"go.uber.org/zap"
 )
 
 type RedisLimiter struct {
-	redis *cache.RedisClient
+	redis  *store.RedisClient
+	logger domain.Logger
 }
 
-func NewRedisLimiter(r *cache.RedisClient) *RedisLimiter {
-	return &RedisLimiter{redis: r}
+func NewRedisLimiter(r *store.RedisClient, log domain.Logger) *RedisLimiter {
+	return &RedisLimiter{redis: r, logger: log}
 }
 
 const rateLimitLua = `
@@ -30,14 +30,14 @@ local limit = tonumber(ARGV[3])
 local maxScore = tonumber(ARGV[4])
 local clearBefore = now - window
 
--- Check persistent threat score (Behavioral blocking)
-local threatScore = tonumber(redis.call('GET', tsKey) or 0)
+	// Behavioral blocking check
+	local threatScore = tonumber(redis.call('GET', tsKey) or 0)
 if threatScore >= maxScore then
     return {-1, threatScore}
 end
 
--- Standard sliding window rate limiting
-redis.call('ZREMRANGEBYSCORE', rlKey, '-inf', clearBefore)
+	// Sliding window
+	redis.call('ZREMRANGEBYSCORE', rlKey, '-inf', clearBefore)
 local count = redis.call('ZCARD', rlKey)
 
 if count < limit then
@@ -51,9 +51,7 @@ end
 
 func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowSeconds int) (bool, int64, error) {
 	if r.redis == nil || r.redis.Client == nil {
-		if logger.Log != nil {
-			logger.Log.Error("Rate limiter Redis client missing")
-		}
+		r.logger.Error("Rate limiter Redis client missing")
 		return true, 0, nil
 	}
 
@@ -66,9 +64,7 @@ func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowS
 
 	res, err := r.redis.Client.Eval(ctx, rateLimitLua, []string{rlKey, tsKey}, now, windowSeconds, limit, maxScore).Result()
 	if err != nil {
-		if logger.Log != nil {
-			logger.Log.Error("Rate limiter Redis Lua error", zap.Error(err))
-		}
+		r.logger.Error("Rate limiter Redis Lua error", domain.Any("error", err))
 		return true, 0, err
 	}
 

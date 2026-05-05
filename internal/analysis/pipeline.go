@@ -17,8 +17,8 @@ type Pipeline struct {
 	scorer    *Scorer
 }
 
-func NewPipeline(cfg *config.SecurityConfig, log domain.Logger, ruleEngines ...domain.RuleEngine) *Pipeline {
-	dlp, _ := engines.NewDlpEngine("./configs/rules/dlp_rules.json")
+func NewPipeline(cfg *config.SecurityConfig, log domain.Logger, dlpRulesPath string, ruleEngines ...domain.RuleEngine) *Pipeline {
+	dlp, _ := engines.NewDlpEngine(dlpRulesPath)
 	return &Pipeline{
 		cfg:       cfg,
 		engines:   ruleEngines,

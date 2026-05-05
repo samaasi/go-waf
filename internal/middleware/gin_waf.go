@@ -9,7 +9,6 @@ import (
 	"github.com/samaasi/go-waf/internal/analysis"
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
-	"github.com/samaasi/go-waf/internal/platform/cache"
 	"github.com/samaasi/go-waf/internal/ratelimit"
 
 	"github.com/gin-gonic/gin"
@@ -29,13 +28,13 @@ type WafMiddleware struct {
 	}
 }
 
-func New(pipeline *analysis.Pipeline, redis *cache.RedisClient, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv domain.GeoIPProvider, log domain.Logger, stats interface {
+func New(pipeline *analysis.Pipeline, limiter ratelimit.Limiter, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv domain.GeoIPProvider, log domain.Logger, stats interface {
 	IncAllow()
 	IncBlock()
 }) *WafMiddleware {
 	return &WafMiddleware{
 		pipeline:    pipeline,
-		rateLimiter: ratelimit.NewRedisLimiter(redis),
+		rateLimiter: limiter,
 		cfg:         cfg,
 		serverCfg:   srv,
 		geo:         geoProv,
@@ -56,41 +55,46 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			}
 		}
 
-		allowed, remaining, err := m.rateLimiter.Allow(
-			c.Request.Context(),
-			clientIP+":"+c.Request.URL.Path,
-			m.cfg.RateLimit,
-			m.cfg.RateLimitWindowSeconds,
-		)
+		// Rate limiting is optional — skip if no limiter is configured
+		var remaining int64
+		if m.rateLimiter != nil {
+			allowed, rem, err := m.rateLimiter.Allow(
+				c.Request.Context(),
+				clientIP+":"+c.Request.URL.Path,
+				m.cfg.RateLimit,
+				m.cfg.RateLimitWindowSeconds,
+			)
+			remaining = rem
 
-		if err != nil {
-			m.logger.Error("Rate Limit check failed", domain.Any("error", err))
-			if !m.cfg.RateLimitFailOpen {
-				c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-					"error": "Security service unavailable",
-					"code":  "RATE_LIMIT_ERROR",
+			if err != nil {
+				m.logger.Error("Rate Limit check failed", domain.Any("error", err))
+				if !m.cfg.RateLimitFailOpen {
+					c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
+						"error": "Security service unavailable",
+						"code":  "RATE_LIMIT_ERROR",
+					})
+					return
+				}
+			} else if !allowed {
+				if remaining == -1 {
+					m.logger.Warn("Behavioral Block Active", domain.String("ip", clientIP))
+					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+						"error":  "Access denied due to suspicious behavior",
+						"code":   "BEHAVIORAL_BLOCK",
+						"req_id": reqID,
+					})
+					return
+				}
+				m.logger.Warn("Rate Limit Exceeded", domain.String("ip", clientIP), domain.String("path", c.Request.URL.Path))
+				c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", m.cfg.RateLimit))
+				c.Header("X-RateLimit-Remaining", "0")
+				c.Header("Retry-After", fmt.Sprintf("%d", m.cfg.RateLimitWindowSeconds))
+				c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+					"error": "Too many requests",
+					"code":  "RATE_LIMIT_EXCEEDED",
 				})
 				return
 			}
-		} else if !allowed {
-			if remaining == -1 {
-				m.logger.Warn("Behavioral Block Active", domain.String("ip", clientIP))
-				c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-					"error":  "Access denied due to suspicious behavior",
-					"code":   "BEHAVIORAL_BLOCK",
-					"req_id": reqID,
-				})
-				return
-			}
-			m.logger.Warn("Rate Limit Exceeded", domain.String("ip", clientIP), domain.String("path", c.Request.URL.Path))
-			c.Header("X-RateLimit-Limit", fmt.Sprintf("%d", m.cfg.RateLimit))
-			c.Header("X-RateLimit-Remaining", "0")
-			c.Header("Retry-After", fmt.Sprintf("%d", m.cfg.RateLimitWindowSeconds))
-			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
-				"error": "Too many requests",
-				"code":  "RATE_LIMIT_EXCEEDED",
-			})
-			return
 		}
 
 		c.Header("X-RateLimit-Remaining", fmt.Sprintf("%d", remaining))
@@ -154,7 +158,9 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			if event.Severity == domain.SeverityCritical {
 				violationScore = 50
 			}
-			_ = m.rateLimiter.ReportViolation(c.Request.Context(), clientIP, violationScore)
+			if m.rateLimiter != nil {
+				_ = m.rateLimiter.ReportViolation(c.Request.Context(), clientIP, violationScore)
+			}
 
 			m.logger.Warn("WAF Blocked Request",
 				domain.String("req_id", reqID),

@@ -6,11 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AdminHandler struct {
-	service *AdminService
+type AdminServicer interface {
+	GetStats() map[string]interface{}
+	UpdateBlockThreshold(newThreshold int)
+	IncAllow()
+	IncBlock()
 }
 
-func NewAdminHandler(svc *AdminService) *AdminHandler {
+type AdminHandler struct {
+	service AdminServicer
+}
+
+func NewAdminHandler(svc AdminServicer) *AdminHandler {
 	return &AdminHandler{service: svc}
 }
 
