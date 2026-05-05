@@ -10,15 +10,28 @@ import (
 	"github.com/samaasi/go-waf/internal/store"
 
 	"github.com/go-redis/redis/v8"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
+type cacheEntry struct {
+	allowed   bool
+	remaining int64
+	expiry    time.Time
+}
+
 type RedisLimiter struct {
-	redis  *store.RedisClient
-	logger domain.Logger
+	redis   *store.RedisClient
+	logger  domain.Logger
+	l1Cache *lru.Cache[string, cacheEntry]
 }
 
 func NewRedisLimiter(r *store.RedisClient, log domain.Logger) *RedisLimiter {
-	return &RedisLimiter{redis: r, logger: log}
+	c, _ := lru.New[string, cacheEntry](2048)
+	return &RedisLimiter{
+		redis:   r,
+		logger:  log,
+		l1Cache: c,
+	}
 }
 
 const rateLimitLua = `
@@ -50,6 +63,14 @@ end
 `
 
 func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowSeconds int) (bool, int64, error) {
+	if r.l1Cache != nil {
+		if entry, ok := r.l1Cache.Get(key); ok {
+			if time.Now().Before(entry.expiry) {
+				return entry.allowed, entry.remaining, nil
+			}
+		}
+	}
+
 	if r.redis == nil || r.redis.Client == nil {
 		r.logger.Error("Rate limiter Redis client missing")
 		return true, 0, nil
@@ -71,13 +92,18 @@ func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowS
 	resList := res.([]interface{})
 	status := resList[0].(int64)
 
-	if status == -1 {
-		// Blocked by behavioral score
-		return false, -1, nil
-	}
-
 	allowed := status == 1
 	remaining := resList[1].(int64)
+
+	// Update L1 Cache
+	if r.l1Cache != nil {
+		expiry := time.Now().Add(1 * time.Second) // default 1s cache
+		if status == -1 {
+			expiry = time.Now().Add(1 * time.Minute) // block 1m cache
+			allowed = false
+		}
+		r.l1Cache.Add(key, cacheEntry{allowed: allowed, remaining: remaining, expiry: expiry})
+	}
 
 	return allowed, remaining, nil
 }
