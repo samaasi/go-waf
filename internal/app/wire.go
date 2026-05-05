@@ -36,7 +36,7 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		}
 	})
 
-	ruleEngines, engineCleanups, err := wireRuleEngines(ctx, log)
+	ruleEngines, engineCleanups, err := wireRuleEngines(ctx, cfg, log)
 	if err != nil {
 		cleanup()
 		return nil, fmt.Errorf("engines: %w", err)
@@ -68,6 +68,7 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		"./configs/rules/regex_rules.json",
 		"./configs/rules/cel_rules.json",
 		"./configs/rules/dlp_rules.json",
+		"./configs/rules/openapi.yaml",
 	}
 	reloadWorker := worker.NewRuleReloadWorker(ruleEngines, watchPaths, 5*time.Minute, log)
 
@@ -89,7 +90,7 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 	}, nil
 }
 
-func wireRuleEngines(ctx context.Context, log domain.Logger) ([]domain.RuleEngine, []func(), error) {
+func wireRuleEngines(ctx context.Context, cfg *config.Config, log domain.Logger) ([]domain.RuleEngine, []func(), error) {
 	var ruleEngines []domain.RuleEngine
 	var cleanups []func()
 
@@ -119,6 +120,15 @@ func wireRuleEngines(ctx context.Context, log domain.Logger) ([]domain.RuleEngin
 			log.Warn("CEL rules load warning", domain.Any("error", err))
 		}
 		ruleEngines = append(ruleEngines, celEngine)
+	}
+
+	if cfg.Security.EnableSchemaValidation {
+		schemaEngine := engines.NewSchemaEngine(cfg.Security.OpenAPISchemaPath, log)
+		if err := schemaEngine.LoadRules(); err != nil {
+			log.Warn("Schema engine load warning", domain.Any("error", err))
+		} else {
+			ruleEngines = append(ruleEngines, schemaEngine)
+		}
 	}
 
 	wasmPath := "./plugins/security_v1.wasm"
