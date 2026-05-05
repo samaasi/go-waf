@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/samaasi/go-waf/internal/analysis"
@@ -14,6 +17,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return new(bytes.Buffer)
+	},
+}
 
 type WafMiddleware struct {
 	pipeline    *analysis.Pipeline
@@ -104,11 +113,14 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
 		}
 
-		bufferedReq, err := SmartReadBody(c.Request)
-		if err != nil {
-			m.logger.Warn("Body read error", domain.Any("error", err))
-			c.AbortWithStatus(http.StatusRequestEntityTooLarge)
-			return
+		// Use buffer pool for body reading
+		buf := bufferPool.Get().(*bytes.Buffer)
+		buf.Reset()
+		defer bufferPool.Put(buf)
+
+		if c.Request.Body != nil {
+			_, _ = io.Copy(buf, c.Request.Body)
+			c.Request.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
 		}
 
 		wafReq := &domain.WafRequest{
@@ -119,7 +131,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			UserAgent: c.Request.UserAgent(),
 			Headers:   c.Request.Header,
 			QueryArgs: c.Request.URL.Query(),
-			Body:      bufferedReq.Buffer,
+			Body:      buf.Bytes(),
 			Protocol:  c.Request.Proto,
 		}
 
