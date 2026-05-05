@@ -11,6 +11,8 @@ type Rule interface {
 
 // RuleEngine describes a component that can manage and execute a set of rules.
 type RuleEngine interface {
+	ID() string
+	Name() string
 	LoadRules() error
 	Evaluate(req *WafRequest) []*SecurityEvent
 }

@@ -23,6 +23,9 @@ func NewGeoIPEngine(cfg *config.SecurityConfig, provider domain.GeoIPProvider) *
 	}
 }
 
+func (e *GeoIPEngine) ID() string   { return "geoip-intelligence" }
+func (e *GeoIPEngine) Name() string { return "GeoIP Intelligence Engine" }
+
 func (e *GeoIPEngine) LoadRules() error {
 	// GeoIP rules are loaded from the MaxMind database and config, no separate rule file needed.
 	return nil

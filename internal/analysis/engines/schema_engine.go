@@ -32,6 +32,9 @@ func NewSchemaEngine(specPath string, log domain.Logger) *SchemaEngine {
 	}
 }
 
+func (e *SchemaEngine) ID() string   { return "openapi-positive-security" }
+func (e *SchemaEngine) Name() string { return "OpenAPI Schema Validator" }
+
 func (e *SchemaEngine) LoadRules() error {
 	loader := openapi3.NewLoader()
 	doc, err := loader.LoadFromFile(e.specPath)

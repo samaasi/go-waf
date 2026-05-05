@@ -5,12 +5,19 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/pkg/utils"
 
 	"github.com/cloudflare/ahocorasick"
 )
+
+var builderPool = sync.Pool{
+	New: func() interface{} {
+		return &strings.Builder{}
+	},
+}
 
 // FastMatchEngine handles massive keyword lists using the Aho-Corasick algorithm.
 type FastMatchEngine struct {
@@ -58,7 +65,9 @@ func (e *FastMatchEngine) Severity() domain.Severity { return domain.SeverityMed
 
 func (e *FastMatchEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
-	var sb strings.Builder
+	sb := builderPool.Get().(*strings.Builder)
+	sb.Reset()
+	defer builderPool.Put(sb)
 
 	// Build a single search space for efficient one-pass Aho-Corasick matching
 	// Path + Query

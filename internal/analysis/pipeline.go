@@ -37,68 +37,84 @@ func NewPipeline(cfg *config.SecurityConfig, log domain.Logger, dlpRulesPath str
 	}
 }
 
-func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.SecurityEvent) {
+func (p *Pipeline) snapshotConfig() *config.SecurityConfig {
+	p.mu.RLock()
+	cfg := p.cfg
+	p.mu.RUnlock()
+	return cfg
+}
+
+func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, []*domain.SecurityEvent) {
+	cfg := p.snapshotConfig()
 	var totalScore int
-	var firstEvent *domain.SecurityEvent
+	var allEvents []*domain.SecurityEvent
 	var mu sync.Mutex
 
-	for i := 0; i < len(p.engines) && i < 2; i++ {
-		events := p.engines[i].Evaluate(req)
-		if len(events) > 0 {
-			p.exporter.Export(events...)
-			if firstEvent == nil {
-				firstEvent = events[0]
-			}
-			score := p.scorer.CalculateScore(events)
-			totalScore += score
-			if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
-				return domain.ActionBlock, firstEvent
-			}
+	var fastMatchEvents []*domain.SecurityEvent
+	for _, engine := range p.engines {
+		if engine.ID() == "fast-match" {
+			fastMatchEvents = engine.Evaluate(req)
+			break
 		}
 	}
 
-	if len(p.engines) > 2 {
-		g, gCtx := errgroup.WithContext(context.Background())
-		for _, engine := range p.engines[2:] {
-			g.Go(func() error {
-				select {
-				case <-gCtx.Done():
-					return nil
-				default:
-				}
+	if len(fastMatchEvents) > 0 {
+		p.exporter.Export(fastMatchEvents...)
+		allEvents = append(allEvents, fastMatchEvents...)
+		totalScore += p.scorer.CalculateScore(fastMatchEvents)
+		if p.scorer.ShouldBlock(totalScore, cfg.BlockThreshold) {
+			return domain.ActionBlock, allEvents
+		}
+	} else if len(req.Body) < 1024 {
+		return domain.ActionAllow, nil
+	}
 
-				events := engine.Evaluate(req)
-				if len(events) > 0 {
-					p.exporter.Export(events...)
-					mu.Lock()
-					defer mu.Unlock()
-					if firstEvent == nil {
-						firstEvent = events[0]
-					}
-					totalScore += p.scorer.CalculateScore(events)
-					if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
-						return fmt.Errorf("threshold reached")
-					}
-				}
+	g, gCtx := errgroup.WithContext(context.Background())
+	for _, engine := range p.engines {
+		if engine.ID() == "fast-match" {
+			continue
+		}
+
+		e := engine
+		g.Go(func() error {
+			select {
+			case <-gCtx.Done():
 				return nil
-			})
-		}
-		_ = g.Wait()
-	}
+			default:
+			}
 
-	if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
+			events := e.Evaluate(req)
+			if len(events) > 0 {
+				p.exporter.Export(events...)
+				mu.Lock()
+				allEvents = append(allEvents, events...)
+				totalScore += p.scorer.CalculateScore(events)
+				isBlocking := p.scorer.ShouldBlock(totalScore, cfg.BlockThreshold)
+				mu.Unlock()
+
+				if isBlocking {
+					return fmt.Errorf("threshold reached")
+				}
+			}
+			return nil
+		})
+	}
+	_ = g.Wait()
+
+	if p.scorer.ShouldBlock(totalScore, cfg.BlockThreshold) {
 		p.logger.Warn("Request Blocked",
 			domain.String("req_id", req.ID),
 			domain.Int("total_score", totalScore),
 		)
-		return domain.ActionBlock, firstEvent
+		return domain.ActionBlock, allEvents
 	}
 
-	return domain.ActionAllow, nil
+	return domain.ActionAllow, allEvents
 }
 
 func (p *Pipeline) InspectResponse(body []byte) (domain.Action, *domain.SecurityEvent, []byte) {
-	if p.dlpEngine == nil || !p.cfg.Dlp.Enabled {
+	cfg := p.snapshotConfig()
+	if p.dlpEngine == nil || !cfg.Dlp.Enabled {
 		return domain.ActionAllow, nil, body
 	}
 
@@ -106,7 +122,7 @@ func (p *Pipeline) InspectResponse(body []byte) (domain.Action, *domain.Security
 	if len(events) > 0 {
 		p.exporter.Export(events...)
 
-		if p.cfg.Dlp.Action == "mask" {
+		if cfg.Dlp.Action == "mask" {
 			maskedBody := p.dlpEngine.Mask(body)
 			return domain.ActionAllow, events[0], maskedBody
 		}

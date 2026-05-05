@@ -86,10 +86,12 @@ func NewRegexEngineWithPath(path string) *RegexEngine {
 	}
 }
 
+func (re *RegexEngine) ID() string   { return "regex-signatures" }
+func (re *RegexEngine) Name() string { return "Regex Signature Engine" }
+
 func (re *RegexEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
 
-	// 1. Evaluate Path rules
 	if len(re.pathRules) > 0 {
 		normPath := utils.NormalizeString(req.Path)
 		for _, r := range re.pathRules {
@@ -99,7 +101,6 @@ func (re *RegexEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 		}
 	}
 
-	// 2. Evaluate Query rules
 	if len(re.queryRules) > 0 {
 		normQuery := utils.NormalizeString(req.QueryArgs.Encode())
 		for _, r := range re.queryRules {
@@ -109,7 +110,6 @@ func (re *RegexEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 		}
 	}
 
-	// 3. Evaluate Body rules
 	if len(re.bodyRules) > 0 {
 		normBody := utils.NormalizeString(string(req.Body))
 		for _, r := range re.bodyRules {
@@ -119,7 +119,6 @@ func (re *RegexEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 		}
 	}
 
-	// 4. Evaluate Header rules
 	for hName, rules := range re.headerRules {
 		hVal := req.Headers.Get(hName)
 		if hVal == "" {
@@ -133,9 +132,7 @@ func (re *RegexEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent 
 		}
 	}
 
-	// 5. Any rules (last resort, evaluate against everything)
 	if len(re.anyRules) > 0 {
-		// This is slow, ideally we don't have many 'ANY' rules
 		normAll := utils.NormalizeString(fmt.Sprintf("%s %s %s", req.Path, req.QueryArgs.Encode(), string(req.Body)))
 		for _, r := range re.anyRules {
 			if matched, data := r.matchNormalized(normAll); matched {

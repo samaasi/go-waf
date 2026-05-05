@@ -84,6 +84,9 @@ func NewDlpEngine(rulePath string) (*DlpEngine, error) {
 	return e, nil
 }
 
+func (e *DlpEngine) ID() string   { return "dlp-data-leakage" }
+func (e *DlpEngine) Name() string { return "Data Leakage Prevention Engine" }
+
 func loadDlpRules(path string) ([]DlpRule, error) {
 	file, err := os.Open(path)
 	if err != nil {
