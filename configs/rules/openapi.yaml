@@ -1,0 +1,30 @@
+openapi: 3.0.0
+info:
+  title: Sample WAF Protected API
+  version: 1.0.0
+paths:
+  /echo:
+    post:
+      summary: Echo endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ok
+              properties:
+                ok:
+                  type: boolean
+    get:
+      summary: Echo GET
+      responses:
+        '200':
+          description: OK
+  /admin/stats:
+    get:
+      summary: Get Admin Stats
+      responses:
+        '200':
+          description: OK

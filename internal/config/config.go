@@ -40,6 +40,8 @@ type SecurityConfig struct {
     RateLimitFailOpen bool `mapstructure:"rate_limit_fail_open"`
     AllowCountries []string `mapstructure:"allow_countries"`
     BlockCountries []string `mapstructure:"block_countries"`
+    EnableSchemaValidation bool `mapstructure:"enable_schema_validation"`
+    OpenAPISchemaPath      string `mapstructure:"openapi_schema_path"`
 }
 
 type LogConfig struct {
@@ -82,6 +84,8 @@ func LoadConfig(path string) (*Config, error) {
     viper.SetDefault("security.rate_limit_fail_open", true)
     viper.SetDefault("security.allow_countries", []string{})
     viper.SetDefault("security.block_countries", []string{})
+    viper.SetDefault("security.enable_schema_validation", false)
+    viper.SetDefault("security.openapi_schema_path", "./configs/rules/openapi.yaml")
 
 	viper.SetDefault("log.level", "info")
 
