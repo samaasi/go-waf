@@ -40,30 +40,30 @@ func NewRedisLimiter(r *store.RedisClient, log domain.Logger) *RedisLimiter {
 
 const (
 	rateLimitLua = `
-local rlKey = KEYS[1]
-local tsKey = KEYS[2]
-local now = tonumber(ARGV[1])
-local window = tonumber(ARGV[2])
-local limit = tonumber(ARGV[3])
-local maxScore = tonumber(ARGV[4])
-local clearBefore = now - window
+		local rlKey = KEYS[1]
+		local tsKey = KEYS[2]
+		local now = tonumber(ARGV[1])
+		local window = tonumber(ARGV[2])
+		local limit = tonumber(ARGV[3])
+		local maxScore = tonumber(ARGV[4])
+		local clearBefore = now - window
 
-local threatScore = tonumber(redis.call('GET', tsKey) or 0)
-if threatScore >= maxScore then
-    return {-1, threatScore}
-end
+		local threatScore = tonumber(redis.call('GET', tsKey) or 0)
+		if threatScore >= maxScore then
+			return {-1, threatScore}
+		end
 
-redis.call('ZREMRANGEBYSCORE', rlKey, '-inf', clearBefore)
-local count = redis.call('ZCARD', rlKey)
+		redis.call('ZREMRANGEBYSCORE', rlKey, '-inf', clearBefore)
+		local count = redis.call('ZCARD', rlKey)
 
-if count < limit then
-    redis.call('ZADD', rlKey, now, now)
-    redis.call('EXPIRE', rlKey, window)
-    return {1, limit - count - 1}
-else
-    return {0, 0}
-end
-`
+		if count < limit then
+			redis.call('ZADD', rlKey, now, now)
+			redis.call('EXPIRE', rlKey, window)
+			return {1, limit - count - 1}
+		else
+			return {0, 0}
+		end
+		`
 	invalidationChannel = "waf:cache:invalidate"
 )
 
@@ -74,7 +74,7 @@ func (r *RedisLimiter) listenForInvalidations() {
 	ch := pubsub.Channel()
 	for msg := range ch {
 		ip := msg.Payload
-		// Purge entries related to this IP from local L1 cache
+
 		keys := r.l1Cache.Keys()
 		for _, k := range keys {
 			if strings.HasPrefix(k, ip) {
@@ -85,8 +85,6 @@ func (r *RedisLimiter) listenForInvalidations() {
 }
 
 func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowSeconds int) (bool, int64, error) {
-	// ... (No change to Allow logic itself, but keeping structure)
-	// (Re-pasting full logic for completeness in the file)
 	if r.l1Cache != nil {
 		if entry, ok := r.l1Cache.Get(key); ok {
 			if time.Now().Before(entry.expiry) {
@@ -107,31 +105,7 @@ func (r *RedisLimiter) Allow(ctx context.Context, key string, limit int, windowS
 	now := time.Now().Unix()
 	maxScore := 100 // Threshold
 
-	res, err := r.redis.Client.Eval(ctx, `
-local rlKey = KEYS[1]
-local tsKey = KEYS[2]
-local now = tonumber(ARGV[1])
-local window = tonumber(ARGV[2])
-local limit = tonumber(ARGV[3])
-local maxScore = tonumber(ARGV[4])
-local clearBefore = now - window
-
-local threatScore = tonumber(redis.call('GET', tsKey) or 0)
-if threatScore >= maxScore then
-    return {-1, threatScore}
-end
-
-redis.call('ZREMRANGEBYSCORE', rlKey, '-inf', clearBefore)
-local count = redis.call('ZCARD', rlKey)
-
-if count < limit then
-    redis.call('ZADD', rlKey, now, now)
-    redis.call('EXPIRE', rlKey, window)
-    return {1, limit - count - 1}
-else
-    return {0, 0}
-end
-`, []string{rlKey, tsKey}, now, windowSeconds, limit, maxScore).Result()
+	res, err := r.redis.Client.Eval(ctx, rateLimitLua, []string{rlKey, tsKey}, now, windowSeconds, limit, maxScore).Result()
 	if err != nil {
 		r.logger.Error("Rate limiter Redis Lua error", domain.Any("error", err))
 		return true, 0, err
