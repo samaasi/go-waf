@@ -32,16 +32,10 @@ type WafMiddleware struct {
 	serverCfg   *config.ServerConfig
 	geo         domain.GeoIPProvider
 	logger      domain.Logger
-	stats       interface {
-		IncAllow()
-		IncBlock()
-	}
+	metrics     domain.Metrics
 }
 
-func New(pipeline *analysis.Pipeline, limiter ratelimit.Limiter, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv domain.GeoIPProvider, log domain.Logger, stats interface {
-	IncAllow()
-	IncBlock()
-}) *WafMiddleware {
+func New(pipeline *analysis.Pipeline, limiter ratelimit.Limiter, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv domain.GeoIPProvider, log domain.Logger, metrics domain.Metrics) *WafMiddleware {
 	return &WafMiddleware{
 		pipeline:    pipeline,
 		rateLimiter: limiter,
@@ -49,7 +43,7 @@ func New(pipeline *analysis.Pipeline, limiter ratelimit.Limiter, cfg *config.Sec
 		serverCfg:   srv,
 		geo:         geoProv,
 		logger:      log,
-		stats:       stats,
+		metrics:     metrics,
 	}
 }
 
@@ -154,8 +148,9 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 				domain.Any("latency", wafLatency),
 				domain.String("matched", event.MatchedData),
 			)
-			if m.stats != nil {
-				m.stats.IncBlock()
+			if m.metrics != nil {
+				m.metrics.IncBlock(c.Request.Method, "403")
+				m.metrics.RecordRuleMatch(event.RuleID, event.RuleName, event.Severity.String())
 			}
 
 			errors.Respond(c, nil, &errors.AppError{
@@ -167,8 +162,9 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		if m.stats != nil {
-			m.stats.IncAllow()
+		if m.metrics != nil {
+			m.metrics.IncAllow(c.Request.Method, "200")
+			m.metrics.ObserveLatency(c.Request.Method, wafLatency.Seconds())
 		}
 		c.Set("X-WAF-Latency", wafLatency)
 		c.Set("X-Request-ID", reqID)

@@ -13,6 +13,7 @@ import (
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/internal/middleware"
 	"github.com/samaasi/go-waf/internal/platform/geoip"
+	"github.com/samaasi/go-waf/internal/platform/metrics"
 	"github.com/samaasi/go-waf/internal/platform/telemetry"
 	"github.com/samaasi/go-waf/internal/ratelimit"
 	"github.com/samaasi/go-waf/internal/store"
@@ -80,10 +81,13 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 	workers = append(workers, k8sWorker)
 
 	adminSvc := admin.NewAdminService(&cfg.Security, pipeline, &cfg.Server, log)
+	promMetrics := metrics.NewPrometheusMetrics()
+
+	multiMetrics := MultiMetrics{adminSvc, promMetrics}
 
 	rateLimiter := ratelimit.NewRedisLimiter(redisClient, log)
 
-	wafMW := middleware.New(pipeline, rateLimiter, &cfg.Security, &cfg.Server, geoProv, log, adminSvc)
+	wafMW := middleware.New(pipeline, rateLimiter, &cfg.Security, &cfg.Server, geoProv, log, multiMetrics)
 	adminHandler := admin.NewAdminHandler(adminSvc)
 
 	watchPaths := []string{
@@ -173,4 +177,42 @@ func wireRuleEngines(ctx context.Context, cfg *config.Config, geo domain.GeoIPPr
 	}
 
 	return ruleEngines, cleanups, nil
+}
+
+type MultiMetrics []domain.Metrics
+
+func (m MultiMetrics) IncAllow(method, status string) {
+	for _, p := range m {
+		p.IncAllow(method, status)
+	}
+}
+
+func (m MultiMetrics) IncBlock(method, status string) {
+	for _, p := range m {
+		p.IncBlock(method, status)
+	}
+}
+
+func (m MultiMetrics) ObserveLatency(method string, duration float64) {
+	for _, p := range m {
+		p.ObserveLatency(method, duration)
+	}
+}
+
+func (m MultiMetrics) RecordRuleMatch(ruleID, ruleName, severity string) {
+	for _, p := range m {
+		p.RecordRuleMatch(ruleID, ruleName, severity)
+	}
+}
+
+func (m MultiMetrics) RecordGeoIP(countryCode string) {
+	for _, p := range m {
+		p.RecordGeoIP(countryCode)
+	}
+}
+
+func (m MultiMetrics) RecordBot(organization string) {
+	for _, p := range m {
+		p.RecordBot(organization)
+	}
 }
