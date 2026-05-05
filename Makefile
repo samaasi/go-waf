@@ -3,10 +3,10 @@ SHELL := /bin/sh
 .PHONY: build run test race bench lint
 
 build:
-	go build ./cmd/waf-server
+	go build ./cmd/server
 
 run:
-	go run ./cmd/waf-server/main.go
+	go run ./cmd/server/main.go
 
 test:
 	go test ./...
