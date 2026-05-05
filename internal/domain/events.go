@@ -14,6 +14,21 @@ const (
 	SeverityCritical Severity = 25
 )
 
+func (s Severity) String() string {
+	switch s {
+	case SeverityLow:
+		return "low"
+	case SeverityMedium:
+		return "medium"
+	case SeverityHigh:
+		return "high"
+	case SeverityCritical:
+		return "critical"
+	default:
+		return "unknown"
+	}
+}
+
 // SecurityEvent represents a specific rule violation.
 type SecurityEvent struct {
 	ID          string    `json:"id"`
