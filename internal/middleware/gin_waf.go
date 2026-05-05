@@ -6,7 +6,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"slices"
 	"sync"
 	"time"
 
@@ -133,19 +132,6 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			QueryArgs: c.Request.URL.Query(),
 			Body:      buf.Bytes(),
 			Protocol:  c.Request.Proto,
-		}
-
-		if m.cfg.EnableGeoIP && m.geo != nil {
-			if country, err := m.geo.GetCountry(clientIP); err == nil {
-				if slices.Contains(m.cfg.BlockCountries, country) {
-					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Access denied", "code": "GEO_BLOCKED"})
-					return
-				}
-				if len(m.cfg.AllowCountries) > 0 && !slices.Contains(m.cfg.AllowCountries, country) {
-					c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Access denied", "code": "GEO_NOT_ALLOWED"})
-					return
-				}
-			}
 		}
 
 		verdict, event := m.pipeline.Inspect(wafReq)

@@ -37,7 +37,21 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		}
 	})
 
-	ruleEngines, engineCleanups, err := wireRuleEngines(ctx, cfg, log)
+	var geoProv domain.GeoIPProvider
+	if cfg.Security.EnableGeoIP {
+		cityPath := "configs/geoip/GeoLite2-City.mmdb"
+		asnPath := "configs/geoip/GeoLite2-ASN.mmdb"
+		if gp, err := geoip.NewMaxMindDB(cityPath, asnPath); err == nil {
+			geoProv = gp
+			cleanups = append(cleanups, func() { gp.Close() })
+			log.Info("GeoIP provider loaded (City + ASN)")
+		} else {
+			log.Warn("GeoIP provider failed to load, falling back to mock", domain.Any("error", err))
+			geoProv = &geoip.MockProvider{}
+		}
+	}
+
+	ruleEngines, engineCleanups, err := wireRuleEngines(ctx, cfg, geoProv, log)
 	if err != nil {
 		cleanup()
 		return nil, fmt.Errorf("engines: %w", err)
@@ -57,15 +71,9 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 
 	pipeline := analysis.NewPipeline(&cfg.Security, log, "./configs/rules/dlp_rules.json", exporter, ruleEngines...)
 
-	var geoProv domain.GeoIPProvider
-	if cfg.Security.EnableGeoIP {
-		if gp, err := geoip.NewMaxMindDB("configs/rules/GeoLite2-Country.mmdb"); err == nil {
-			geoProv = gp
-			cleanups = append(cleanups, func() { gp.Close() })
-			log.Info("GeoIP provider loaded")
-		} else {
-			log.Warn("GeoIP provider failed to load", domain.Any("error", err))
-		}
+	if cfg.Security.EnableGeoIP && geoProv != nil {
+		geoipWorker := worker.NewGeoIPWorker(cfg, geoProv, log)
+		workers = append(workers, geoipWorker)
 	}
 
 	adminSvc := admin.NewAdminService(&cfg.Security, pipeline, &cfg.Server, log)
@@ -81,6 +89,8 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		"./configs/rules/cel_rules.json",
 		"./configs/rules/dlp_rules.json",
 		"./configs/rules/openapi.yaml",
+		"./configs/geoip/GeoLite2-City.mmdb",
+		"./configs/geoip/GeoLite2-ASN.mmdb",
 	}
 	reloadWorker := worker.NewRuleReloadWorker(ruleEngines, watchPaths, 5*time.Minute, log)
 	workers = append(workers, reloadWorker)
@@ -103,9 +113,13 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 	}, nil
 }
 
-func wireRuleEngines(ctx context.Context, cfg *config.Config, log domain.Logger) ([]domain.RuleEngine, []func(), error) {
+func wireRuleEngines(ctx context.Context, cfg *config.Config, geo domain.GeoIPProvider, log domain.Logger) ([]domain.RuleEngine, []func(), error) {
 	var ruleEngines []domain.RuleEngine
 	var cleanups []func()
+
+	if cfg.Security.EnableGeoIP && geo != nil {
+		ruleEngines = append(ruleEngines, engines.NewGeoIPEngine(&cfg.Security, geo))
+	}
 
 	acEngine, err := engines.NewFastMatchEngine("./configs/rules/keywords.json")
 	if err != nil {
