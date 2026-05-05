@@ -1,0 +1,45 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: wafpolicies.security.snapwaf.com
+spec:
+  group: security.snapwaf.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                blockThreshold:
+                  type: integer
+                  minimum: 1
+                enableBotShield:
+                  type: boolean
+                blockCountries:
+                  type: array
+                  items:
+                    type: string
+                allowCountries:
+                  type: array
+                  items:
+                    type: string
+                dlp:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    action:
+                      type: string
+                      enum: ["block", "mask"]
+  scope: Namespaced
+  names:
+    plural: wafpolicies
+    singular: wafpolicy
+    kind: WafPolicy
+    shortNames:
+      - wp
