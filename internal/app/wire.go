@@ -76,6 +76,9 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		workers = append(workers, geoipWorker)
 	}
 
+	k8sWorker := worker.NewK8sOperatorWorker(pipeline, log)
+	workers = append(workers, k8sWorker)
+
 	adminSvc := admin.NewAdminService(&cfg.Security, pipeline, &cfg.Server, log)
 
 	rateLimiter := ratelimit.NewRedisLimiter(redisClient, log)
