@@ -1,11 +1,15 @@
 package analysis
 
 import (
+	"context"
+	"fmt"
 	"sync"
 
 	"github.com/samaasi/go-waf/internal/analysis/engines"
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type Pipeline struct {
@@ -28,23 +32,57 @@ func NewPipeline(cfg *config.SecurityConfig, log domain.Logger, dlpRulesPath str
 	}
 }
 
-// Inspect runs the request through all registered engines
 func (p *Pipeline) Inspect(req *domain.WafRequest) (domain.Action, *domain.SecurityEvent) {
 	var totalScore int
 	var firstEvent *domain.SecurityEvent
+	var mu sync.Mutex
 
-	for _, engine := range p.engines {
-		events := engine.Evaluate(req)
-		if len(events) > 0 && firstEvent == nil {
-			firstEvent = events[0]
+	// 1. Critical/Fast Engines (Negative Model) - Sequential for early exit
+	// We assume engines[0] and engines[1] are fast (AC/Regex)
+	for i := 0; i < len(p.engines) && i < 2; i++ {
+		events := p.engines[i].Evaluate(req)
+		if len(events) > 0 {
+			if firstEvent == nil {
+				firstEvent = events[0]
+			}
+			score := p.scorer.CalculateScore(events)
+			totalScore += score
+			if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
+				return domain.ActionBlock, firstEvent
+			}
 		}
-		totalScore += p.scorer.CalculateScore(events)
-		for _, event := range events {
-			p.logger.Debug("Rule Matched",
-				domain.String("rule", event.RuleName),
-				domain.Int("severity", int(event.Severity)),
-			)
+	}
+
+	// 2. Heavy Engines (Positive Model, ML, WASM) - Parallel
+	if len(p.engines) > 2 {
+		g, gCtx := errgroup.WithContext(context.Background())
+		for _, engine := range p.engines[2:] {
+			engine := engine
+			g.Go(func() error {
+				// Check if already blocked by another goroutine
+				select {
+				case <-gCtx.Done():
+					return nil
+				default:
+				}
+
+				events := engine.Evaluate(req)
+				if len(events) > 0 {
+					mu.Lock()
+					defer mu.Unlock()
+					if firstEvent == nil {
+						firstEvent = events[0]
+					}
+					totalScore += p.scorer.CalculateScore(events)
+					if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
+						// Return error to trigger context cancellation for others
+						return fmt.Errorf("threshold reached")
+					}
+				}
+				return nil
+			})
 		}
+		_ = g.Wait()
 	}
 
 	if p.scorer.ShouldBlock(totalScore, p.cfg.BlockThreshold) {
