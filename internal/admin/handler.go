@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"net/http"
+	"github.com/samaasi/go-waf/internal/errors"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,7 +23,6 @@ func NewAdminHandler(svc AdminServicer) *AdminHandler {
 
 func (h *AdminHandler) RegisterRoutes(r *gin.RouterGroup) {
 	admin := r.Group("/admin")
-	// In production, add middleware.AuthRequired() here!
 	{
 		admin.GET("/stats", h.GetStats)
 		admin.POST("/config/threshold", h.UpdateThreshold)
@@ -32,7 +31,7 @@ func (h *AdminHandler) RegisterRoutes(r *gin.RouterGroup) {
 
 func (h *AdminHandler) GetStats(c *gin.Context) {
 	stats := h.service.GetStats()
-	c.JSON(http.StatusOK, stats)
+	errors.Respond(c, stats, nil)
 }
 
 type UpdateThresholdReq struct {
@@ -42,10 +41,10 @@ type UpdateThresholdReq struct {
 func (h *AdminHandler) UpdateThreshold(c *gin.Context) {
 	var req UpdateThresholdReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		errors.Respond(c, nil, errors.ErrValidation("threshold", "Invalid threshold value").WithInternal(err))
 		return
 	}
 
 	h.service.UpdateBlockThreshold(req.Threshold)
-	c.JSON(http.StatusOK, gin.H{"message": "Threshold updated", "new_value": req.Threshold})
+	errors.Respond(c, gin.H{"message": "Threshold updated", "new_value": req.Threshold}, nil)
 }
