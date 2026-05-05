@@ -23,7 +23,9 @@ func NewRouter(wafMW *middleware.WafMiddleware, adminHandler *admin.AdminHandler
 	r.GET("/health", HealthHandler())
 
 	// Domain routes
-	adminHandler.RegisterRoutes(r.Group("/"))
+	adminGroup := r.Group("/")
+	adminGroup.Use(middleware.AdminAuth(srvCfg.AdminAPIKey))
+	adminHandler.RegisterRoutes(adminGroup)
 
 	return r
 }

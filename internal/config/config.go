@@ -22,6 +22,7 @@ type ServerConfig struct {
     WriteTimeout int    `mapstructure:"write_timeout"`
     MaxBodyMB    int    `mapstructure:"max_body_mb"`
     TrustedProxies []string `mapstructure:"trusted_proxies"`
+    AdminAPIKey  string `mapstructure:"admin_api_key"`
 }
 
 type RedisConfig struct {
@@ -67,6 +68,7 @@ func LoadConfig(path string) (*Config, error) {
     viper.SetDefault("server.write_timeout", 30)
     viper.SetDefault("server.max_body_mb", 10)
     viper.SetDefault("server.trusted_proxies", []string{})
+    viper.SetDefault("server.admin_api_key", "secret-waf-key")
 
 	viper.SetDefault("redis.host", "127.0.0.1")
 	viper.SetDefault("redis.port", 6379)
