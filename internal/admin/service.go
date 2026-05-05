@@ -28,19 +28,6 @@ func NewAdminService(cfg *config.SecurityConfig, pl *analysis.Pipeline, srv *con
 	}
 }
 
-func (s *AdminService) UpdateBlockThreshold(newThreshold int) {
-	s.mu.Lock()
-	old := s.config.BlockThreshold
-	s.config.BlockThreshold = newThreshold
-	s.mu.Unlock()
-
-	s.logger.Info("Admin configuration changed",
-		domain.String("item", "block_threshold"),
-		domain.Int("old", old),
-		domain.Int("new", newThreshold),
-	)
-}
-
 // GetStats returns simplified runtime stats
 func (s *AdminService) GetStats() map[string]interface{} {
 	s.mu.RLock()
