@@ -2,10 +2,10 @@ package test
 
 import (
     "bytes"
-    "io/ioutil"
     "mime/multipart"
     "net/http"
     "net/http/httptest"
+    "os"
     "testing"
 
     "github.com/gin-gonic/gin"
@@ -15,6 +15,7 @@ import (
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/internal/middleware"
+	"github.com/samaasi/go-waf/internal/ratelimit"
 )
 
 // buildTestServer creates a Gin router with WAF middleware and a simple echo route
@@ -29,18 +30,20 @@ func buildTestServer() (*gin.Engine, *admin.AdminService) {
 	_ = re.LoadRules()
 	ml := engines.NewStatisticalModel()
 	if ac != nil {
-		pl := analysis.NewPipeline(sec, noopLog, ac, re, ml)
+		pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", ac, re, ml)
 		svc := admin.NewAdminService(sec, pl, srv)
-		mw := middleware.New(pl, nil, sec, srv, nil, noopLog, svc)
+		var noopLimiter ratelimit.Limiter
+		mw := middleware.New(pl, noopLimiter, sec, srv, nil, noopLog, svc)
 		r := gin.New()
 		r.Use(mw.Handler())
 		r.POST("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 		r.GET("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 		return r, svc
 	}
-	pl := analysis.NewPipeline(sec, noopLog, re, ml)
+	pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", re, ml)
 	svc := admin.NewAdminService(sec, pl, srv)
-	mw := middleware.New(pl, nil, sec, srv, nil, noopLog, svc)
+	var noopLimiter ratelimit.Limiter
+	mw := middleware.New(pl, noopLimiter, sec, srv, nil, noopLog, svc)
 	r := gin.New()
 	r.Use(mw.Handler())
 	r.POST("/echo", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
@@ -59,7 +62,7 @@ func TestReplayAttackSamples_Blocking(t *testing.T) {
     r.ServeHTTP(w1, req1)
 
     // XSS in body
-    body, _ := ioutil.ReadFile("test/attack_samples/xss_script.txt")
+    body, _ := os.ReadFile("test/attack_samples/xss_script.txt")
     req2 := httptest.NewRequest(http.MethodPost, "/echo", bytes.NewReader(body))
     req2.Header.Set("Content-Type", "text/plain")
     w2 := httptest.NewRecorder()
