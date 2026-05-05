@@ -12,7 +12,17 @@ type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Security SecurityConfig `mapstructure:"security"`
-	Log      LogConfig      `mapstructure:"log"`
+	Log       LogConfig       `mapstructure:"log"`
+	Telemetry TelemetryConfig `mapstructure:"telemetry"`
+}
+
+type TelemetryConfig struct {
+	Enabled        bool   `mapstructure:"enabled"`
+	OrganizationID string `mapstructure:"organization_id"`
+	APIKey         string `mapstructure:"api_key"`
+	CollectorURL   string `mapstructure:"collector_url"`
+	BatchSize      int    `mapstructure:"batch_size"`
+	FlushInterval  int    `mapstructure:"flush_interval_ms"`
 }
 
 type ServerConfig struct {
@@ -88,6 +98,11 @@ func LoadConfig(path string) (*Config, error) {
     viper.SetDefault("security.openapi_schema_path", "./configs/rules/openapi.yaml")
 
 	viper.SetDefault("log.level", "info")
+
+	viper.SetDefault("telemetry.enabled", false)
+	viper.SetDefault("telemetry.collector_url", "https://api.snapwaf.com/v1/ingest")
+	viper.SetDefault("telemetry.batch_size", 100)
+	viper.SetDefault("telemetry.flush_interval_ms", 5000)
 
 	if err := viper.ReadInConfig(); err != nil {
 		var nf viper.ConfigFileNotFoundError

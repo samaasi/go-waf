@@ -25,3 +25,13 @@ type SecurityEvent struct {
 	MatchedData string    `json:"matched_data"`
 	Timestamp   time.Time `json:"timestamp"`
 }
+
+// AuditExporter defines the interface for streaming security events.
+type AuditExporter interface {
+	Export(events ...*SecurityEvent)
+}
+
+// NoopAuditExporter is the default "opt-out" implementation.
+type NoopAuditExporter struct{}
+
+func (n *NoopAuditExporter) Export(events ...*SecurityEvent) {}
