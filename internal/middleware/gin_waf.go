@@ -14,6 +14,7 @@ import (
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/internal/errors"
 	"github.com/samaasi/go-waf/internal/ratelimit"
+	"github.com/samaasi/go-waf/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -33,10 +34,11 @@ type WafMiddleware struct {
 	geo         domain.GeoIPProvider
 	logger      domain.Logger
 	metrics     domain.Metrics
+	ipChecker   *utils.IPChecker
 }
 
 func New(pipeline *analysis.Pipeline, limiter ratelimit.Limiter, cfg *config.SecurityConfig, srv *config.ServerConfig, geoProv domain.GeoIPProvider, log domain.Logger, metrics domain.Metrics) *WafMiddleware {
-	return &WafMiddleware{
+	mw := &WafMiddleware{
 		pipeline:    pipeline,
 		rateLimiter: limiter,
 		cfg:         cfg,
@@ -45,12 +47,32 @@ func New(pipeline *analysis.Pipeline, limiter ratelimit.Limiter, cfg *config.Sec
 		logger:      log,
 		metrics:     metrics,
 	}
+
+	// Build IP checker from config
+	if len(cfg.IPAllowlist) > 0 || len(cfg.IPBlocklist) > 0 {
+		checker := utils.NewIPChecker()
+		for _, ip := range cfg.IPBlocklist {
+			_ = checker.Add(ip)
+		}
+		mw.ipChecker = checker
+	}
+
+	return mw
+}
+
+func (m *WafMiddleware) GetLogger() domain.Logger {
+	return m.logger
 }
 
 func (m *WafMiddleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
-		reqID := uuid.New().String()
+
+		// Accept inbound request ID from upstream LB, or generate one
+		reqID := c.GetHeader("X-Request-ID")
+		if reqID == "" || len(reqID) > 128 {
+			reqID = uuid.New().String()
+		}
 
 		clientIP := c.ClientIP()
 		if len(m.serverCfg.TrustedProxies) == 0 {
@@ -59,11 +81,47 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			}
 		}
 
+		// IP Blocklist — immediate rejection, no further processing
+		if m.ipChecker != nil && m.ipChecker.IsBlocked(clientIP) {
+			m.logger.Warn("IP Blocklist Rejected", domain.String("ip", clientIP))
+			if m.metrics != nil {
+				m.metrics.IncBlock(c.Request.Method, "403")
+			}
+			errors.Respond(c, nil, &errors.AppError{
+				Code:    errors.CodeSecurity,
+				Status:  http.StatusForbidden,
+				Message: "Access denied",
+			})
+			return
+		}
+
+		// IP Allowlist — bypass WAF inspection entirely
+		if len(m.cfg.IPAllowlist) > 0 {
+			allowed := false
+			for _, ip := range m.cfg.IPAllowlist {
+				if ip == clientIP {
+					allowed = true
+					break
+				}
+			}
+			if allowed {
+				c.Set("X-Request-ID", reqID)
+				c.Writer.Header().Set("X-Request-ID", reqID)
+				c.Next()
+				return
+			}
+		}
+
 		var remaining int64
 		if m.rateLimiter != nil {
+			rateLimitKey := clientIP
+			if m.cfg.RateLimitKeyStrategy == "per_ip_path" {
+				rateLimitKey = clientIP + ":" + c.Request.URL.Path
+			}
+
 			allowed, rem, err := m.rateLimiter.Allow(
 				c.Request.Context(),
-				clientIP+":"+c.Request.URL.Path,
+				rateLimitKey,
 				m.cfg.RateLimit,
 				m.cfg.RateLimitWindowSeconds,
 			)
@@ -128,13 +186,14 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			Protocol:  c.Request.Proto,
 		}
 
-		verdict, event := m.pipeline.Inspect(wafReq)
+		verdict, events := m.pipeline.Inspect(wafReq)
 
 		wafLatency := time.Since(start)
 
 		if verdict == domain.ActionBlock {
+			firstEvent := events[0]
 			violationScore := 10
-			if event.Severity == domain.SeverityCritical {
+			if firstEvent.Severity == domain.SeverityCritical {
 				violationScore = 50
 			}
 			if m.rateLimiter != nil {
@@ -143,14 +202,14 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 
 			m.logger.Warn("WAF Blocked Request",
 				domain.String("req_id", reqID),
-				domain.String("rule", event.RuleName),
+				domain.String("rule", firstEvent.RuleName),
 				domain.String("ip", clientIP),
 				domain.Any("latency", wafLatency),
-				domain.String("matched", event.MatchedData),
+				domain.String("matched", firstEvent.MatchedData),
 			)
 			if m.metrics != nil {
 				m.metrics.IncBlock(c.Request.Method, "403")
-				m.metrics.RecordRuleMatch(event.RuleID, event.RuleName, event.Severity.String())
+				m.metrics.RecordRuleMatch(firstEvent.RuleID, firstEvent.RuleName, firstEvent.Severity.String())
 			}
 
 			errors.Respond(c, nil, &errors.AppError{
@@ -168,6 +227,7 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 		}
 		c.Set("X-WAF-Latency", wafLatency)
 		c.Set("X-Request-ID", reqID)
+		c.Set("waf_events", events) // Store all events for downstream (Proxy Insight)
 		c.Writer.Header().Set("X-Request-ID", reqID)
 
 		dlpWriter := NewDlpResponseWriter(c.Writer, 8*1024)
@@ -187,7 +247,9 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 
 				dlpWriter.bodyBuffer.Reset()
 				dlpWriter.ResponseWriter.WriteHeader(http.StatusForbidden)
-				_, _ = dlpWriter.ResponseWriter.Write([]byte(`{"error": "Sensitive data leak prevented", "code": "DLP_BLOCK"}`))
+				// Use consistent error envelope instead of raw JSON
+				envelope := fmt.Sprintf(`{"success":false,"error":{"code":"%s","message":"Sensitive data leak prevented"},"request_id":"%s"}`, errors.CodeSecurity, reqID)
+				_, _ = dlpWriter.ResponseWriter.Write([]byte(envelope))
 			} else {
 				if !dlpWriter.headerSent {
 					dlpWriter.ResponseWriter.WriteHeader(dlpWriter.status)

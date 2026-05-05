@@ -128,3 +128,14 @@ func NormalizeString(s string) string {
 
 	return b.String()
 }
+
+// ContainsCaseInsensitive checks if substr is within s, ignoring case.
+func ContainsCaseInsensitive(s, substr string) bool {
+	if len(substr) == 0 {
+		return true
+	}
+	if len(s) < len(substr) {
+		return false
+	}
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+}

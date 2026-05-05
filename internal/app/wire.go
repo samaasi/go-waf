@@ -165,6 +165,13 @@ func wireRuleEngines(ctx context.Context, cfg *config.Config, geo domain.GeoIPPr
 		}
 	}
 
+	crsEngine := engines.NewCRSLangEngine("./configs/rules/owasp-crs")
+	if err := crsEngine.LoadRules(); err != nil {
+		log.Warn("CRSLang engine rules load warning", domain.Any("error", err))
+	} else {
+		ruleEngines = append(ruleEngines, crsEngine)
+	}
+
 	wasmPath := "./plugins/security_v1.wasm"
 	if _, statErr := os.Stat(wasmPath); statErr == nil {
 		if wasmEngine, wasmErr := engines.NewWasmEngine(ctx, wasmPath, log); wasmErr == nil {
