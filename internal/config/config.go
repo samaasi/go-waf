@@ -52,6 +52,8 @@ type SecurityConfig struct {
     BlockCountries []string `mapstructure:"block_countries"`
     EnableSchemaValidation bool `mapstructure:"enable_schema_validation"`
     OpenAPISchemaPath      string `mapstructure:"openapi_schema_path"`
+    MaxMindLicenseKey      string `mapstructure:"maxmind_license_key"`
+    GeoIPUpdateIntervalHours int `mapstructure:"geoip_update_interval_hours"`
 }
 
 type LogConfig struct {
@@ -96,6 +98,8 @@ func LoadConfig(path string) (*Config, error) {
     viper.SetDefault("security.block_countries", []string{})
     viper.SetDefault("security.enable_schema_validation", false)
     viper.SetDefault("security.openapi_schema_path", "./configs/rules/openapi.yaml")
+    viper.SetDefault("security.maxmind_license_key", "")
+    viper.SetDefault("security.geoip_update_interval_hours", 24)
 
 	viper.SetDefault("log.level", "info")
 
