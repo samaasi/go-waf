@@ -28,7 +28,7 @@ func NewAdminService(cfg *config.SecurityConfig, pl *analysis.Pipeline, srv *con
 	}
 }
 
-// GetStats returns simplified runtime stats
+// GetStats returns simplified runtime stats (point-in-time snapshot)
 func (s *AdminService) GetStats() map[string]interface{} {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -54,7 +54,7 @@ func (s *AdminService) GetStats() map[string]interface{} {
 func (s *AdminService) IncAllow(method, status string) { s.allowedCount.Add(1) }
 func (s *AdminService) IncBlock(method, status string) { s.blockedCount.Add(1) }
 
-func (s *AdminService) ObserveLatency(method string, duration float64)           {}
+func (s *AdminService) ObserveLatency(method string, duration float64)    {}
 func (s *AdminService) RecordRuleMatch(ruleID, ruleName, severity string) {}
-func (s *AdminService) RecordGeoIP(countryCode string)           {}
-func (s *AdminService) RecordBot(organization string)             {}
+func (s *AdminService) RecordGeoIP(countryCode string)                    {}
+func (s *AdminService) RecordBot(organization string)                     {}
