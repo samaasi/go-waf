@@ -56,14 +56,20 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		}
 	}
 
-	adminSvc := admin.NewAdminService(&cfg.Security, pipeline, &cfg.Server)
+	adminSvc := admin.NewAdminService(&cfg.Security, pipeline, &cfg.Server, log)
 
 	rateLimiter := ratelimit.NewRedisLimiter(redisClient, log)
 
 	wafMW := middleware.New(pipeline, rateLimiter, &cfg.Security, &cfg.Server, geoProv, log, adminSvc)
 	adminHandler := admin.NewAdminHandler(adminSvc)
 
-	reloadWorker := worker.NewRuleReloadWorker(ruleEngines, 5*time.Minute, log)
+	watchPaths := []string{
+		"./configs/rules/keywords.json",
+		"./configs/rules/regex_rules.json",
+		"./configs/rules/cel_rules.json",
+		"./configs/rules/dlp_rules.json",
+	}
+	reloadWorker := worker.NewRuleReloadWorker(ruleEngines, watchPaths, 5*time.Minute, log)
 
 	log.Info("Application wired successfully",
 		domain.Int("engines", len(ruleEngines)),

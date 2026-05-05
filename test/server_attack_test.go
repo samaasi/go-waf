@@ -31,7 +31,7 @@ func buildTestServer() (*gin.Engine, *admin.AdminService) {
 	ml := engines.NewStatisticalModel()
 	if ac != nil {
 		pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", ac, re, ml)
-		svc := admin.NewAdminService(sec, pl, srv)
+		svc := admin.NewAdminService(sec, pl, srv, noopLog)
 		var noopLimiter ratelimit.Limiter
 		mw := middleware.New(pl, noopLimiter, sec, srv, nil, noopLog, svc)
 		r := gin.New()
@@ -41,7 +41,7 @@ func buildTestServer() (*gin.Engine, *admin.AdminService) {
 		return r, svc
 	}
 	pl := analysis.NewPipeline(sec, noopLog, "./configs/rules/dlp_rules.json", re, ml)
-	svc := admin.NewAdminService(sec, pl, srv)
+	svc := admin.NewAdminService(sec, pl, srv, noopLog)
 	var noopLimiter ratelimit.Limiter
 	mw := middleware.New(pl, noopLimiter, sec, srv, nil, noopLog, svc)
 	r := gin.New()
