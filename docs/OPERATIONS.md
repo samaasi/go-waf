@@ -1,53 +1,57 @@
-# Operations & Admin Guide: Managing Go-WAF
+# Security Operations: Live Control & Virtual Patching
 
-Go-WAF provides real-time visibility and control through its Admin API and Security Dashboard.
+Go-WAF is built for real-time security operations. This guide explains how to use the Admin API and Dashboard to mitigate emerging threats instantly.
 
-## 1. Security Dashboard
-The visual command center for your WAF.
-- **Access**: `http://<admin-host>:8081/admin/dashboard`
-- **Features**:
-    - Real-time Allowed/Blocked traffic counters.
-    - Attack trend visualization.
-    - Hot-toggle rule switch (Enable/Disable rules instantly).
+## 1. The Virtual Patching Workflow
+
+When a new high-profile vulnerability (like a 0-day) is discovered, you need to protect your servers *before* your developers can patch the underlying code. This is **Virtual Patching**.
+
+### Step 1: Create a Mitigation Rule
+Define a lightweight CRSLang or Regex rule to block the specific exploit pattern.
+```yaml
+id: "VIRTUAL-PATCH-LOG4J"
+name: "Mitigation for CVE-2021-44228"
+patterns:
+  - "${jndi:ldap://"
+action: "BLOCK"
+```
+
+### Step 2: Deploy Instantly
+Push the rule to your Go-WAF cluster via the Admin API or the `/admin/reload` endpoint. The WAF will hot-reload its rules in milliseconds without dropping any traffic.
+
+---
 
 ## 2. Admin API Reference
 
-### List Active Rules
-Retrieve the current rule inventory and their state across all engines.
-`GET /admin/rules`
-
-### Toggle Rule State
-Enable or disable a specific rule at runtime.
+### Real-Time Rule Toggling
+You can enable or disable any security rule instantly.
 `POST /admin/rules/:id/toggle`
 ```json
 { "enabled": false }
 ```
+*Useful for quickly disabling a noisy rule that is causing False Positives.*
 
-### Metrics Endpoint
-Scrape multi-dimensional metrics for Prometheus/Grafana.
-`GET /admin/metrics`
+### System Health & Metrics
+Monitor your WAF's performance in real-time.
+`GET /admin/metrics` (Prometheus Format)
 
-## 3. Observability Signals
+**Key Metrics to Watch:**
+- `waf_blocked_total`: Are you seeing a spike in attacks?
+- `waf_inspection_latency_seconds`: Is the WAF adding too much delay? (Should be < 0.001s).
 
-### Prometheus Metrics
-- `waf_requests_total`: Counter of all processed requests.
-- `waf_blocked_total`: Counter of blocked requests by engine.
-- `waf_inspection_latency_seconds`: Histogram of analysis time.
-- `waf_rule_match_total`: Counter of matches per rule ID.
+---
 
-### Audit Logging
-Audit logs are streamed asynchronously to avoid request latency.
-- **Log Format**: JSON with correlation ID.
-- **Variables**: Captures matched data, remote IP, path, and engine ID.
+## 3. Real-Time Dashboard
+Access the glassmorphism Dashboard at `http://<admin-host>:9091/admin/dashboard`.
 
-## 4. Emergency Procedures
+- **Visual Traffic Feed**: Watch attacks as they happen.
+- **Rule Inventory**: Search through all active rules across all engines (ML, Regex, CRS).
+- **One-Click Toggles**: Quickly flip rules between `Enabled` and `Disabled` states from the UI.
 
-### Bypass Mode
-If the WAF is causing an outage, switch to `passthrough` mode via environment variable or API.
-```bash
-WAF_MODE=passthrough
-```
+---
 
-### Force Reload Rules
-Force a complete reload of the CRSLang and Regex engines.
-`POST /admin/reload`
+## 4. Tuning for Zero-False Positives
+If Go-WAF is blocking legitimate users:
+1. **Check the Audit Log**: Look for the `MatchedData` field to see exactly what triggered the block.
+2. **Adjust ML Thresholds**: In `config.yaml`, you can raise the `entropy_threshold` or the `kl_divergence_threshold` to be less aggressive.
+3. **Engine Bypass**: You can disable specific engines (like the ML engine) for trusted internal IP ranges using the `Pipeline` configuration.
