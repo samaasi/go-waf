@@ -60,7 +60,10 @@ func (e *SchemaEngine) LoadRules() error {
 	return nil
 }
 
-func (e *SchemaEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (e *SchemaEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
+	if phase != 2 {
+		return nil
+	}
 	e.mu.RLock()
 	router := e.router
 	e.mu.RUnlock()

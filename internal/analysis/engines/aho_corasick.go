@@ -1,6 +1,7 @@
 package engines
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -21,8 +22,10 @@ var builderPool = sync.Pool{
 
 // FastMatchEngine handles massive keyword lists using the Aho-Corasick algorithm.
 type FastMatchEngine struct {
-	matcher *ahocorasick.Matcher
-	rules   []KeywordRule
+	matcher  *ahocorasick.Matcher
+	rules    []KeywordRule
+	rulePath string
+	mu       sync.RWMutex
 }
 
 // KeywordRule now includes JSON tags for loading
@@ -34,28 +37,15 @@ type KeywordRule struct {
 
 // NewFastMatchEngine loads rules from a file and builds the Aho-Corasick matcher.
 func NewFastMatchEngine(rulePath string) (*FastMatchEngine, error) {
-	rules, err := loadRulesFromJSON(rulePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load fast-match rules: %w", err)
+	e := &FastMatchEngine{
+		rulePath: rulePath,
 	}
 
-	if len(rules) == 0 {
-		return nil, fmt.Errorf("no rules found in %s", rulePath)
+	if err := e.LoadRules(); err != nil {
+		return nil, err
 	}
 
-	patterns := make([]string, len(rules))
-	for i := range rules {
-		// Force upper case in memory, even if JSON is lower
-		rules[i].Pattern = strings.ToUpper(rules[i].Pattern)
-		patterns[i] = rules[i].Pattern
-	}
-
-	matcher := ahocorasick.NewStringMatcher(patterns)
-
-	return &FastMatchEngine{
-		matcher: matcher,
-		rules:   rules,
-	}, nil
+	return e, nil
 }
 
 func (e *FastMatchEngine) ID() string                { return "fast-match" }
@@ -63,7 +53,16 @@ func (e *FastMatchEngine) Name() string              { return "Aho-Corasick Scan
 func (e *FastMatchEngine) Tags() []string            { return []string{"fast", "pre-filter", "dfa"} }
 func (e *FastMatchEngine) Severity() domain.Severity { return domain.SeverityMedium }
 
-func (e *FastMatchEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (e *FastMatchEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
+	e.mu.RLock()
+	matcher := e.matcher
+	rules := e.rules
+	e.mu.RUnlock()
+
+	if matcher == nil {
+		return nil
+	}
+
 	var events []*domain.SecurityEvent
 	sb := builderPool.Get().(*strings.Builder)
 	sb.Reset()
@@ -105,13 +104,13 @@ func (e *FastMatchEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEve
 	normalized := utils.NormalizeString(fullSearchSpace)
 	upper := strings.ToUpper(normalized)
 
-	matches := e.matcher.Match([]byte(upper))
+	matches := matcher.Match([]byte(upper))
 
 	// Dedup events by rule ID to avoid spamming multiple matches of the same rule in the same request
 	seen := make(map[string]bool)
 
 	for _, matchIdx := range matches {
-		rule := e.rules[matchIdx]
+		rule := rules[matchIdx]
 		if seen[rule.Pattern] {
 			continue
 		}
@@ -147,7 +146,28 @@ func loadRulesFromJSON(path string) ([]KeywordRule, error) {
 }
 
 func (e *FastMatchEngine) LoadRules() error {
-	// @TODO: Hot reloading
+	rules, err := loadRulesFromJSON(e.rulePath)
+	if err != nil {
+		return fmt.Errorf("failed to load fast-match rules: %w", err)
+	}
+
+	if len(rules) == 0 {
+		return fmt.Errorf("no rules found in %s", e.rulePath)
+	}
+
+	patterns := make([]string, len(rules))
+	for i := range rules {
+		rules[i].Pattern = strings.ToUpper(rules[i].Pattern)
+		patterns[i] = rules[i].Pattern
+	}
+
+	matcher := ahocorasick.NewStringMatcher(patterns)
+
+	e.mu.Lock()
+	e.rules = rules
+	e.matcher = matcher
+	e.mu.Unlock()
+
 	return nil
 }
 

@@ -1,6 +1,7 @@
 package engines
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -47,7 +48,10 @@ func NewCelEngine(rulePath string, log domain.Logger) (*CelEngine, error) {
 func (e *CelEngine) ID() string   { return "cel-programmable" }
 func (e *CelEngine) Name() string { return "CEL Programmable Engine" }
 
-func (e *CelEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (e *CelEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
+	if phase > 2 {
+		return nil
+	}
 	if len(e.rules) == 0 {
 		return nil
 	}

@@ -73,7 +73,10 @@ func (e *WasmEngine) Name() string { return "WASM Plugin Engine" }
 // LoadRules is a no-op for WASM engine as the logic is encapsulated in the binary
 func (e *WasmEngine) LoadRules() error { return nil }
 
-func (e *WasmEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (e *WasmEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
+	if phase > 2 {
+		return nil
+	}
 	// Get a module from the pool
 	val := e.pool.Get()
 	if val == nil {
@@ -93,19 +96,16 @@ func (e *WasmEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
 		return nil
 	}
 
-	// 1. Allocate guest memory
 	results, err := malloc.Call(e.ctx, uint64(inputSize))
 	if err != nil {
 		return nil
 	}
 	inputPtr := uint32(results[0])
 
-	// 2. Transfer data to guest
 	if !mod.Memory().Write(inputPtr, []byte(input)) {
 		return nil
 	}
 
-	// 3. Execute guest logic
 	inspectResults, err := inspect.Call(e.ctx, uint64(inputPtr), uint64(inputSize))
 	if err != nil {
 		e.logger.Error("WASM execution failed", domain.Any("error", err))

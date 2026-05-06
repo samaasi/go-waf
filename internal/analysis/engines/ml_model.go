@@ -1,6 +1,8 @@
 package engines
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
 	"github.com/samaasi/go-waf/internal/domain"
@@ -26,7 +28,10 @@ func (m *StatisticalModel) Name() string              { return "Statistical Anom
 func (m *StatisticalModel) Tags() []string            { return []string{"ml", "heuristic"} }
 func (m *StatisticalModel) Severity() domain.Severity { return domain.SeverityHigh }
 
-func (m *StatisticalModel) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (m *StatisticalModel) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
+	if phase != 2 {
+		return nil
+	}
 	var events []*domain.SecurityEvent
 
 	if len(req.Body) > 0 {
@@ -39,7 +44,7 @@ func (m *StatisticalModel) Evaluate(req *domain.WafRequest) []*domain.SecurityEv
 				RuleName:    "High Entropy (Potential Encrypted Payload)",
 				Severity:    domain.SeverityHigh,
 				Message:     "Request body entropy too high",
-				MatchedData: "entropy_val", // In real ML, store the vector
+				MatchedData: fmt.Sprintf("%.2f", ent),
 			})
 		}
 
@@ -57,7 +62,7 @@ func (m *StatisticalModel) Evaluate(req *domain.WafRequest) []*domain.SecurityEv
 				RuleName:    "High Signal-to-Noise Ratio",
 				Severity:    domain.SeverityMedium,
 				Message:     "Too many special characters",
-				MatchedData: "noise_ratio",
+				MatchedData: fmt.Sprintf("%.2f", ratio),
 			})
 		}
 	}

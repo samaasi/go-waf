@@ -1,6 +1,7 @@
 package engines
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"time"
@@ -31,7 +32,10 @@ func (e *GeoIPEngine) LoadRules() error {
 	return nil
 }
 
-func (e *GeoIPEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (e *GeoIPEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
+	if phase != 1 {
+		return nil
+	}
 	if !e.cfg.EnableGeoIP || e.provider == nil {
 		return nil
 	}

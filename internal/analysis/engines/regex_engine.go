@@ -1,6 +1,7 @@
 package engines
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -28,7 +29,7 @@ func (r *RegexRule) Severity() domain.Severity { return r.severity }
 
 // Evaluate is kept for domain.Rule interface compatibility, but the engine
 // will primarily use matchNormalized for performance.
-func (r *RegexRule) Evaluate(req *domain.WafRequest) (bool, string) {
+func (r *RegexRule) Evaluate(ctx context.Context, req *domain.WafRequest) (bool, string) {
 	var searchSpace string
 	switch r.targetField {
 	case "QUERY":
@@ -89,54 +90,56 @@ func NewRegexEngineWithPath(path string) *RegexEngine {
 func (re *RegexEngine) ID() string   { return "regex-signatures" }
 func (re *RegexEngine) Name() string { return "Regex Signature Engine" }
 
-func (re *RegexEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (re *RegexEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
 
-	if len(re.pathRules) > 0 {
-		normPath := utils.NormalizeString(req.Path)
-		for _, r := range re.pathRules {
-			if matched, data := r.matchNormalized(normPath); matched {
-				events = append(events, re.createEvent(r, data))
+	if phase == 1 {
+		if len(re.pathRules) > 0 {
+			normPath := utils.NormalizeString(req.Path)
+			for _, r := range re.pathRules {
+				if matched, data := r.matchNormalized(normPath); matched {
+					events = append(events, re.createEvent(r, data))
+				}
 			}
 		}
-	}
 
-	if len(re.queryRules) > 0 {
-		normQuery := utils.NormalizeString(req.QueryArgs.Encode())
-		for _, r := range re.queryRules {
-			if matched, data := r.matchNormalized(normQuery); matched {
-				events = append(events, re.createEvent(r, data))
+		if len(re.queryRules) > 0 {
+			normQuery := utils.NormalizeString(req.QueryArgs.Encode())
+			for _, r := range re.queryRules {
+				if matched, data := r.matchNormalized(normQuery); matched {
+					events = append(events, re.createEvent(r, data))
+				}
 			}
 		}
-	}
 
-	if len(re.bodyRules) > 0 {
-		normBody := utils.NormalizeString(string(req.Body))
-		for _, r := range re.bodyRules {
-			if matched, data := r.matchNormalized(normBody); matched {
-				events = append(events, re.createEvent(r, data))
+		for hName, rules := range re.headerRules {
+			hVal := req.Headers.Get(hName)
+			if hVal == "" {
+				continue
+			}
+			normHVal := utils.NormalizeString(hVal)
+			for _, r := range rules {
+				if matched, data := r.matchNormalized(normHVal); matched {
+					events = append(events, re.createEvent(r, data))
+				}
 			}
 		}
-	}
-
-	for hName, rules := range re.headerRules {
-		hVal := req.Headers.Get(hName)
-		if hVal == "" {
-			continue
-		}
-		normHVal := utils.NormalizeString(hVal)
-		for _, r := range rules {
-			if matched, data := r.matchNormalized(normHVal); matched {
-				events = append(events, re.createEvent(r, data))
+	} else if phase == 2 {
+		if len(re.bodyRules) > 0 {
+			normBody := utils.NormalizeString(string(req.Body))
+			for _, r := range re.bodyRules {
+				if matched, data := r.matchNormalized(normBody); matched {
+					events = append(events, re.createEvent(r, data))
+				}
 			}
 		}
-	}
 
-	if len(re.anyRules) > 0 {
-		normAll := utils.NormalizeString(fmt.Sprintf("%s %s %s", req.Path, req.QueryArgs.Encode(), string(req.Body)))
-		for _, r := range re.anyRules {
-			if matched, data := r.matchNormalized(normAll); matched {
-				events = append(events, re.createEvent(r, data))
+		if len(re.anyRules) > 0 {
+			normAll := utils.NormalizeString(fmt.Sprintf("%s %s %s", req.Path, req.QueryArgs.Encode(), string(req.Body)))
+			for _, r := range re.anyRules {
+				if matched, data := r.matchNormalized(normAll); matched {
+					events = append(events, re.createEvent(r, data))
+				}
 			}
 		}
 	}

@@ -1,6 +1,7 @@
 package engines
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -27,63 +28,62 @@ func (e *LibinjectionEngine) Name() string              { return "Libinjection S
 func (e *LibinjectionEngine) Tags() []string            { return []string{"semantic", "sqli", "xss"} }
 func (e *LibinjectionEngine) Severity() domain.Severity { return domain.SeverityHigh }
 
-func (e *LibinjectionEngine) Evaluate(req *domain.WafRequest) []*domain.SecurityEvent {
+func (e *LibinjectionEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
 
-	// Check components individually for better attribution: Path
-	if matched, fingerprint := e.checkSQLi(req.Path); matched {
-		events = append(events, e.createEvent("SQLI", "SQL Injection in Path", fingerprint))
-	}
-	if matched := e.checkXSS(req.Path); matched {
-		events = append(events, e.createEvent("XSS", "XSS in Path", "xss_detected"))
-	}
+	if phase == 1 {
+		if matched, fingerprint := e.checkSQLi(req.Path); matched {
+			events = append(events, e.createEvent("SQLI", "SQL Injection in Path", fingerprint))
+		}
+		if matched := e.checkXSS(req.Path); matched {
+			events = append(events, e.createEvent("XSS", "XSS in Path", "xss_detected"))
+		}
 
-	// Query
-	query := req.QueryArgs.Encode()
-	if query != "" {
-		if matched, fingerprint := e.checkSQLi(query); matched {
-			events = append(events, e.createEvent("SQLI", "SQL Injection in Query", fingerprint))
+		query := req.QueryArgs.Encode()
+		if query != "" {
+			if matched, fingerprint := e.checkSQLi(query); matched {
+				events = append(events, e.createEvent("SQLI", "SQL Injection in Query", fingerprint))
+			}
+			if matched := e.checkXSS(query); matched {
+				events = append(events, e.createEvent("XSS", "XSS in Query", "xss_detected"))
+			}
 		}
-		if matched := e.checkXSS(query); matched {
-			events = append(events, e.createEvent("XSS", "XSS in Query", "xss_detected"))
-		}
-	}
 
-	// Headers (targeted)
-	for _, h := range []string{"User-Agent", "Referer", "Cookie"} {
-		val := req.Headers.Get(h)
-		if val == "" {
-			continue
+		for _, h := range []string{"User-Agent", "Referer", "Cookie"} {
+			val := req.Headers.Get(h)
+			if val == "" {
+				continue
+			}
+			if matched, fingerprint := e.checkSQLi(val); matched {
+				events = append(events, e.createEvent("SQLI", fmt.Sprintf("SQL Injection in Header (%s)", h), fingerprint))
+			}
+			if matched := e.checkXSS(val); matched {
+				events = append(events, e.createEvent("XSS", fmt.Sprintf("XSS in Header (%s)", h), "xss_detected"))
+			}
 		}
-		if matched, fingerprint := e.checkSQLi(val); matched {
-			events = append(events, e.createEvent("SQLI", fmt.Sprintf("SQL Injection in Header (%s)", h), fingerprint))
-		}
-		if matched := e.checkXSS(val); matched {
-			events = append(events, e.createEvent("XSS", fmt.Sprintf("XSS in Header (%s)", h), "xss_detected"))
-		}
-	}
-
-	// Body
-	if len(req.Body) > 0 {
-		if isJSONBody(req.Body) {
-			values := utils.ExtractValuesOnly(req.Body)
-			for _, v := range values {
-				if matched, fingerprint := e.checkSQLi(v); matched {
+	} else if phase == 2 {
+		// Body
+		if len(req.Body) > 0 {
+			if isJSONBody(req.Body) {
+				values := utils.ExtractValuesOnly(req.Body)
+				for _, v := range values {
+					if matched, fingerprint := e.checkSQLi(v); matched {
+						events = append(events, e.createEvent("SQLI", "SQL Injection in Body", fingerprint))
+						break
+					}
+					if matched := e.checkXSS(v); matched {
+						events = append(events, e.createEvent("XSS", "XSS in Body", "xss_detected"))
+						break
+					}
+				}
+			} else {
+				bodyStr := string(req.Body)
+				if matched, fingerprint := e.checkSQLi(bodyStr); matched {
 					events = append(events, e.createEvent("SQLI", "SQL Injection in Body", fingerprint))
-					break
 				}
-				if matched := e.checkXSS(v); matched {
+				if matched := e.checkXSS(bodyStr); matched {
 					events = append(events, e.createEvent("XSS", "XSS in Body", "xss_detected"))
-					break
 				}
-			}
-		} else {
-			bodyStr := string(req.Body)
-			if matched, fingerprint := e.checkSQLi(bodyStr); matched {
-				events = append(events, e.createEvent("SQLI", "SQL Injection in Body", fingerprint))
-			}
-			if matched := e.checkXSS(bodyStr); matched {
-				events = append(events, e.createEvent("XSS", "XSS in Body", "xss_detected"))
 			}
 		}
 	}
