@@ -34,6 +34,13 @@ func (e *CloudExporter) Export(events ...*domain.SecurityEvent) {
 	}
 }
 
+// LogTransaction extracts and exports events from the full transaction context.
+func (e *CloudExporter) LogTransaction(req *domain.WafRequest, events []*domain.SecurityEvent) {
+	if len(events) > 0 {
+		e.Export(events...)
+	}
+}
+
 // GetQueue returns the event channel for the worker to consume.
 func (e *CloudExporter) GetQueue() <-chan *domain.SecurityEvent {
 	return e.queue
