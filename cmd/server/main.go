@@ -17,6 +17,8 @@ import (
 	"github.com/samaasi/go-waf/internal/server"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -54,9 +56,10 @@ func main() {
 
 	router := server.NewRouter(application.WAF, application.AdminHandler, &cfg.Server)
 
+	h2s := &http2.Server{}
 	srv := &http.Server{
 		Addr:           fmt.Sprintf(":%s", cfg.Server.Port),
-		Handler:        router,
+		Handler:        h2c.NewHandler(router, h2s),
 		ReadTimeout:    time.Duration(cfg.Server.ReadTimeout) * time.Second,
 		WriteTimeout:   time.Duration(cfg.Server.WriteTimeout) * time.Second,
 		IdleTimeout:    time.Duration(cfg.Server.IdleTimeout) * time.Second,
