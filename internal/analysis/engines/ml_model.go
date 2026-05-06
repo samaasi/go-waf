@@ -3,7 +3,6 @@ package engines
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/samaasi/go-waf/internal/domain"
 	"github.com/samaasi/go-waf/pkg/utils"
@@ -28,41 +27,88 @@ func (m *StatisticalModel) Name() string              { return "Statistical Anom
 func (m *StatisticalModel) Tags() []string            { return []string{"ml", "heuristic"} }
 func (m *StatisticalModel) Severity() domain.Severity { return domain.SeverityHigh }
 
-func (m *StatisticalModel) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
-	if phase != 2 {
-		return nil
+func (m *StatisticalModel) GetRules() []domain.RuleMetadata {
+	return []domain.RuleMetadata{
+		{ID: "ML-CLIENT-ANOMALY", Name: "Imposter Client Detection", Severity: domain.SeverityMedium, Enabled: true, EngineID: m.ID()},
+		{ID: "ML-ANOMALY-AGGREGATE", Name: "Statistical Anomaly Fusion", Severity: domain.SeverityHigh, Enabled: true, EngineID: m.ID()},
 	}
+}
+
+func (m *StatisticalModel) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
+func (m *StatisticalModel) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
 
-	if len(req.Body) > 0 {
-		bodyStr := string(req.Body)
+	if phase == 1 {
+		// High-Fidelity Client Fingerprinting
+		ua := req.Headers.Get("User-Agent")
+		imposterScore := utils.VerifyClientFingerprint(req.Method, ua, req.Headers)
 
-		ent := utils.CalculateEntropy(bodyStr)
-		if ent > m.entropyThreshold {
+		if imposterScore >= 40.0 {
+			severity := domain.SeverityMedium
+			if imposterScore >= 70.0 {
+				severity = domain.SeverityHigh
+			}
+
 			events = append(events, &domain.SecurityEvent{
-				RuleID:      "ML-ENTROPY",
-				RuleName:    "High Entropy (Potential Encrypted Payload)",
-				Severity:    domain.SeverityHigh,
-				Message:     "Request body entropy too high",
-				MatchedData: fmt.Sprintf("%.2f", ent),
+				RuleID:   "ML-CLIENT-ANOMALY",
+				RuleName: "Imposter Client Profile",
+				Severity: severity,
+				Message:  fmt.Sprintf("Client fingerprinting indicates high probability of bot impersonation (Score: %.0f)", imposterScore),
 			})
 		}
+	}
 
+	if phase == 2 && len(req.Body) > 0 {
+		bodyStr := utils.SampleString(string(req.Body), 2048)
+		anomalyScore := 0.0
+
+		// 1. KL-Divergence (Structural Anomaly)
+		klDiv := utils.CalculateKLDivergence(bodyStr)
+		if klDiv > 6.0 { // Threshold for significant structural deviation
+			anomalyScore += 40
+		}
+
+		// 2. Entropy Check
+		ent := utils.CalculateEntropy(bodyStr)
+		if ent > m.entropyThreshold {
+			anomalyScore += 30
+		}
+
+		// 3. N-gram Suspicion
+		ngScore := utils.ScoreNgrams(bodyStr)
+		if ngScore > 0.8 {
+			anomalyScore += 30
+		}
+
+		// 4. Special Character Ratio
 		specialCount := 0
-		for _, r := range bodyStr {
-			if !strings.ContainsRune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ", r) {
+		for i := 0; i < len(bodyStr); i++ {
+			b := bodyStr[i]
+			if !((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == ' ') {
 				specialCount++
 			}
 		}
-
 		ratio := float64(specialCount) / float64(len(bodyStr))
 		if ratio > m.specialCharLimit {
+			anomalyScore += 20
+		}
+
+		// Trigger based on Cumulative Anomaly Score
+		if anomalyScore >= 50 {
+			severity := domain.SeverityMedium
+			if anomalyScore >= 80 {
+				severity = domain.SeverityHigh
+			}
+
 			events = append(events, &domain.SecurityEvent{
-				RuleID:      "ML-NOISE",
-				RuleName:    "High Signal-to-Noise Ratio",
-				Severity:    domain.SeverityMedium,
-				Message:     "Too many special characters",
-				MatchedData: fmt.Sprintf("%.2f", ratio),
+				RuleID:      "ML-ANOMALY-AGGREGATE",
+				RuleName:    "High-Dimensional Statistical Anomaly",
+				Severity:    severity,
+				Message:     fmt.Sprintf("Multiple statistical signals indicate non-human payload (Score: %.0f)", anomalyScore),
+				MatchedData: fmt.Sprintf("KL:%.2f, Ent:%.2f, NG:%.2f", klDiv, ent, ngScore),
 			})
 		}
 	}
