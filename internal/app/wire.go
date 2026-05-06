@@ -52,22 +52,31 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 		}
 	}
 
-	ruleEngines, engineCleanups, err := wireRuleEngines(ctx, cfg, geoProv, log)
+	colStore := store.NewRedisCollectionStore(redisClient)
+
+	ruleEngines, engineCleanups, err := wireRuleEngines(ctx, cfg, geoProv, colStore, log)
 	if err != nil {
 		cleanup()
 		return nil, fmt.Errorf("engines: %w", err)
 	}
 	cleanups = append(cleanups, engineCleanups...)
 
-	var exporter domain.AuditExporter = &domain.NoopAuditExporter{}
 	var workers []worker.Worker
+	auditQueueSize := 1000
+	auditWorker := worker.NewAuditWorker("configs/audit.log", auditQueueSize, log)
+	workers = append(workers, auditWorker)
+
+	localExporter := telemetry.NewLocalAuditExporter(auditWorker.GetQueue())
+	var exporter domain.AuditExporter = localExporter
 
 	if cfg.Telemetry.Enabled {
 		cloudExporter := telemetry.NewCloudExporter(1000, log)
-		exporter = cloudExporter
 		telemetryWorker := worker.NewTelemetryWorker(&cfg.Telemetry, cloudExporter.GetQueue(), log)
 		workers = append(workers, telemetryWorker)
-		log.Info("Telemetry enabled", domain.String("collector", cfg.Telemetry.CollectorURL))
+
+		// Combine both into a MultiExporter
+		exporter = telemetry.NewMultiExporter(localExporter, cloudExporter)
+		log.Info("Telemetry dual-export enabled (Local Audit + Cloud)", domain.String("collector", cfg.Telemetry.CollectorURL))
 	}
 
 	pipeline := analysis.NewPipeline(&cfg.Security, log, "./configs/rules/dlp_rules.json", exporter, ruleEngines...)
@@ -120,7 +129,7 @@ func Wire(ctx context.Context, cfg *config.Config, log domain.Logger) (*App, err
 	}, nil
 }
 
-func wireRuleEngines(ctx context.Context, cfg *config.Config, geo domain.GeoIPProvider, log domain.Logger) ([]domain.RuleEngine, []func(), error) {
+func wireRuleEngines(ctx context.Context, cfg *config.Config, geo domain.GeoIPProvider, colStore domain.CollectionStore, log domain.Logger) ([]domain.RuleEngine, []func(), error) {
 	var ruleEngines []domain.RuleEngine
 	var cleanups []func()
 
@@ -165,7 +174,7 @@ func wireRuleEngines(ctx context.Context, cfg *config.Config, geo domain.GeoIPPr
 		}
 	}
 
-	crsEngine := engines.NewCRSLangEngine("./configs/rules/owasp-crs")
+	crsEngine := engines.NewCRSLangEngine("./configs/rules/owasp-crs", colStore)
 	if err := crsEngine.LoadRules(); err != nil {
 		log.Warn("CRSLang engine rules load warning", domain.Any("error", err))
 	} else {

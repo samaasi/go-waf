@@ -174,6 +174,11 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			c.Request.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
 		}
 
+		sessionID := ""
+		if cookie, err := c.Cookie("session_id"); err == nil {
+			sessionID = cookie
+		}
+
 		wafReq := &domain.WafRequest{
 			ID:        reqID,
 			Method:    c.Request.Method,
@@ -184,9 +189,12 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 			QueryArgs: c.Request.URL.Query(),
 			Body:      buf.Bytes(),
 			Protocol:  c.Request.Proto,
+			SessionID: sessionID,
+			TX:        make(map[string]interface{}),
 		}
 
-		verdict, events := m.pipeline.Inspect(wafReq)
+		verdict, events := m.pipeline.Inspect(c.Request.Context(), wafReq)
+		allEvents := append([]*domain.SecurityEvent{}, events...)
 
 		wafLatency := time.Since(start)
 
@@ -212,6 +220,8 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 				m.metrics.RecordRuleMatch(firstEvent.RuleID, firstEvent.RuleName, firstEvent.Severity.String())
 			}
 
+			m.pipeline.FinishTransaction(wafReq, allEvents)
+
 			errors.Respond(c, nil, &errors.AppError{
 				Code:    errors.CodeSecurity,
 				Status:  http.StatusForbidden,
@@ -227,41 +237,59 @@ func (m *WafMiddleware) Handler() gin.HandlerFunc {
 		}
 		c.Set("X-WAF-Latency", wafLatency)
 		c.Set("X-Request-ID", reqID)
-		c.Set("waf_events", events) // Store all events for downstream (Proxy Insight)
+		c.Set("waf_events", events)
 		c.Writer.Header().Set("X-Request-ID", reqID)
 
-		dlpWriter := NewDlpResponseWriter(c.Writer, 8*1024)
-		c.Writer = dlpWriter
+		wafWriter := NewWafResponseWriter(c.Writer, 1024*1024)
+		c.Writer = wafWriter
 
 		c.Next()
 
-		if dlpWriter.bodyBuffer.Len() > 0 {
-			resVerdict, resEvent, finalBody := m.pipeline.InspectResponse(dlpWriter.CapturedBody())
+		wafReq.ResponseStatus = wafWriter.Status()
+		wafReq.ResponseHeaders = wafWriter.Header()
 
-			if resVerdict == domain.ActionBlock {
-				m.logger.Error("DLP Violation Blocked",
+		resVerdict3, resEvents3, _ := m.pipeline.InspectResponse(c.Request.Context(), wafReq, 3)
+		allEvents = append(allEvents, resEvents3...)
+		if resVerdict3 == domain.ActionBlock {
+			m.logger.Warn("Phase 3 Block (Response Headers)", domain.String("req_id", reqID))
+			m.pipeline.FinishTransaction(wafReq, allEvents)
+			wafWriter.bodyBuffer.Reset()
+			wafWriter.ResponseWriter.WriteHeader(http.StatusForbidden)
+			envelope := fmt.Sprintf(`{"success":false,"error":{"code":"%s","message":"Security policy violation in response headers"},"request_id":"%s"}`, errors.CodeSecurity, reqID)
+			_, _ = wafWriter.ResponseWriter.Write([]byte(envelope))
+			return
+		}
+
+		if wafWriter.bodyBuffer.Len() > 0 {
+			wafReq.ResponseBody = wafWriter.CapturedBody()
+			resVerdict4, resEvents4, finalBody := m.pipeline.InspectResponse(c.Request.Context(), wafReq, 4)
+			allEvents = append(allEvents, resEvents4...)
+
+			if resVerdict4 == domain.ActionBlock {
+				firstEvent := resEvents4[0]
+				m.logger.Error("Phase 4 Block (Response Body / DLP)",
 					domain.String("req_id", reqID),
-					domain.String("rule", resEvent.RuleName),
+					domain.String("rule", firstEvent.RuleName),
 					domain.String("ip", clientIP),
 				)
 
-				dlpWriter.bodyBuffer.Reset()
-				dlpWriter.ResponseWriter.WriteHeader(http.StatusForbidden)
-				// Use consistent error envelope instead of raw JSON
-				envelope := fmt.Sprintf(`{"success":false,"error":{"code":"%s","message":"Sensitive data leak prevented"},"request_id":"%s"}`, errors.CodeSecurity, reqID)
-				_, _ = dlpWriter.ResponseWriter.Write([]byte(envelope))
+				m.pipeline.FinishTransaction(wafReq, allEvents)
+				wafWriter.bodyBuffer.Reset()
+				wafWriter.ResponseWriter.WriteHeader(http.StatusForbidden)
+				envelope := fmt.Sprintf(`{"success":false,"error":{"code":"%s","message":"Security policy violation in response"},"request_id":"%s"}`, errors.CodeSecurity, reqID)
+				_, _ = wafWriter.ResponseWriter.Write([]byte(envelope))
 			} else {
-				if !dlpWriter.headerSent {
-					dlpWriter.ResponseWriter.WriteHeader(dlpWriter.status)
+				if resEvents4 != nil && m.cfg.Dlp.Action == "mask" {
+					m.logger.Info("DLP Masking Applied", domain.String("req_id", reqID))
 				}
-				if resEvent != nil && m.cfg.Dlp.Action == "mask" {
-					m.logger.Info("DLP Sensitive Data Masked",
-						domain.String("req_id", reqID),
-						domain.String("rule", resEvent.RuleName),
-					)
-				}
-				_, _ = dlpWriter.ResponseWriter.Write(finalBody)
+				m.pipeline.FinishTransaction(wafReq, allEvents)
+				wafWriter.bodyBuffer.Reset()
+				_, _ = wafWriter.bodyBuffer.Write(finalBody)
+				_ = wafWriter.FlushBuffer()
 			}
+		} else {
+			m.pipeline.FinishTransaction(wafReq, allEvents)
+			_ = wafWriter.FlushBuffer()
 		}
 	}
 }

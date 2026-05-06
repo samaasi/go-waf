@@ -2,13 +2,14 @@ package middleware
 
 import (
 	"bytes"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-// DlpResponseWriter intercepts the response stream to capture a small buffer
-// for Data Loss Prevention (DLP) inspection.
-type DlpResponseWriter struct {
+// WafResponseWriter intercepts the response stream to capture headers and body
+// for Phase 3 (Response Headers) and Phase 4 (Response Body) inspection.
+type WafResponseWriter struct {
 	gin.ResponseWriter
 	bodyBuffer *bytes.Buffer
 	maxSize    int
@@ -16,25 +17,30 @@ type DlpResponseWriter struct {
 	headerSent bool
 }
 
-func NewDlpResponseWriter(w gin.ResponseWriter, maxSize int) *DlpResponseWriter {
-	return &DlpResponseWriter{
+func NewWafResponseWriter(w gin.ResponseWriter, maxSize int) *WafResponseWriter {
+	return &WafResponseWriter{
 		ResponseWriter: w,
 		bodyBuffer:     bytes.NewBuffer(make([]byte, 0, maxSize)),
 		maxSize:        maxSize,
-		status:         200,
+		status:         http.StatusOK,
 	}
 }
 
-func (w *DlpResponseWriter) WriteHeader(code int) {
-	if w.bodyBuffer.Len() >= w.maxSize {
-		w.ResponseWriter.WriteHeader(code)
-		w.headerSent = true
-	}
+func (w *WafResponseWriter) WriteHeader(code int) {
 	w.status = code
+	// We don't call the underlying WriteHeader yet because WAF Phase 3 might block it
 }
 
-func (w *DlpResponseWriter) Write(b []byte) (int, error) {
+func (w *WafResponseWriter) Status() int {
+	return w.status
+}
+
+func (w *WafResponseWriter) Write(b []byte) (int, error) {
 	if w.bodyBuffer.Len() >= w.maxSize || w.headerSent {
+		if !w.headerSent {
+			w.ResponseWriter.WriteHeader(w.status)
+			w.headerSent = true
+		}
 		return w.ResponseWriter.Write(b)
 	}
 
@@ -43,25 +49,33 @@ func (w *DlpResponseWriter) Write(b []byte) (int, error) {
 		return w.bodyBuffer.Write(b)
 	}
 
+	// Buffer limit reached, flush existing buffer and continue streaming
 	w.bodyBuffer.Write(b[:remaining])
-
-	if !w.headerSent {
-		w.ResponseWriter.WriteHeader(w.status)
-		w.headerSent = true
-	}
-
-	if _, err := w.ResponseWriter.Write(w.bodyBuffer.Bytes()); err != nil {
+	if err := w.FlushBuffer(); err != nil {
 		return 0, err
 	}
-	w.bodyBuffer.Reset()
-
 	return w.ResponseWriter.Write(b[remaining:])
 }
 
-func (w *DlpResponseWriter) WriteString(s string) (int, error) {
+func (w *WafResponseWriter) FlushBuffer() error {
+	if w.headerSent {
+		return nil
+	}
+	w.ResponseWriter.WriteHeader(w.status)
+	w.headerSent = true
+	if w.bodyBuffer.Len() > 0 {
+		if _, err := w.ResponseWriter.Write(w.bodyBuffer.Bytes()); err != nil {
+			return err
+		}
+		w.bodyBuffer.Reset()
+	}
+	return nil
+}
+
+func (w *WafResponseWriter) WriteString(s string) (int, error) {
 	return w.Write([]byte(s))
 }
 
-func (w *DlpResponseWriter) CapturedBody() []byte {
+func (w *WafResponseWriter) CapturedBody() []byte {
 	return w.bodyBuffer.Bytes()
 }

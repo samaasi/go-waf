@@ -24,6 +24,9 @@ func NewScorer() *Scorer {
 func (s *Scorer) CalculateScore(events []*domain.SecurityEvent) int {
 	total := 0
 	for _, event := range events {
+		if event.Severity == 0 {
+			continue
+		}
 		if val, ok := s.weights[event.Severity]; ok {
 			total += val
 		} else {
