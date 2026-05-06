@@ -33,6 +33,17 @@ We combine the battle-tested **OWASP Core Rule Set (CRS)** with **libinjection**
 
 ---
 
+## 🗺️ Development Roadmap
+
+We are committed to making Go-WAF the gold standard for high-performance security. Our current focus areas for the next releases include:
+
+- `[ ]` **Rule Persistence**: Move Admin API rule toggles from in-memory to persistent Redis storage.
+- `[ ]` **Enterprise Test Coverage**: Increase statement coverage to **>80%**, targeting the Admin and gRPC layers.
+- `[ ]` **Zero-Allocation Audit**: Optimization of the hot-path to ensure absolute zero-allocation per request.
+- `[ ]` **Full CRS Parity**: Implementation of complex ModSecurity-style variables (e.g. `MATCHED_VARS_NAMES`).
+- `[ ]` **Automated Threat Intel**: Integration with remote rule repositories for real-time signature updates.
+- `[ ]` **Integration Hardening**: Restoring full compatibility with the FTW (Framework for Testing WAFs) suite.
+
 ## 📚 Documentation Suite
 
 - **[Quickstart Guide](docs/QUICKSTART.md)**: Get running in 5 minutes (for beginners).
