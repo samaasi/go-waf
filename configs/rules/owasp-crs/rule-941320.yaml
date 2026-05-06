@@ -1,0 +1,32 @@
+id: "941320"
+msg: Possible XSS Attack Detected - HTML Tag Handler
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: martquotes
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|!REQUEST_COOKIES:/_pk_ref/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: <(?:a|abbr|acronym|address|applet|area|audioscope|b|base|basefront|bdo|bgsound|big|blackface|blink|blockquote|body|bq|br|button|caption|center|cite|code|col|colgroup|comment|dd|del|dfn|dir|div|dl|dt|em|embed|fieldset|fn|font|form|frame|frameset|h1|head|hr|html|i|iframe|ilayer|img|input|ins|isindex|kdb|keygen|label|layer|legend|li|limittext|link|listing|map|marquee|menu|meta|multicol|nobr|noembed|noframes|noscript|nosmartquotes|object|ol|optgroup|option|p|param|plaintext|pre|q|rt|ruby|s|samp|script|select|server|shadow|sidebar|small|spacer|span|strike|strong|style|sub|sup|table|tbody|td|textarea|tfoot|th|thead|title|tr|tt|u|ul|var|wbr|xml|xmp)W
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:jsDecode
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.xss_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-xss
+    - OWASP_CRS
+    - capec/1000/152/242/63
+    - PCI/6.5.1
+    - paranoia-level/2

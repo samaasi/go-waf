@@ -1,0 +1,35 @@
+id: "949100"
+msg: Request Denied by IP Reputation Enforcement
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: IP:REPUT_BLOCK_FLAG
+      value: "1"
+      transformations: []
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: TX:DO_REPUT_BLOCK
+          value: "1"
+          transformations: []
+      actions:
+        - type: setvar
+          key: tx.inbound_anomaly_score
+          value: '%{tx.anomaly_score}'
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-ip

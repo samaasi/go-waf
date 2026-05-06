@@ -1,0 +1,44 @@
+id: "920450"
+msg: HTTP header is restricted by policy (%{MATCHED_VAR})
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_HEADERS
+      value: ^.*$
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.header_name_%{tx.0}
+      value: /%{tx.0}/
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@within'
+          variable: TX:/^header_name_/
+          value: '%{tx.restricted_headers}'
+          transformations: []
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272
+    - PCI/12.1

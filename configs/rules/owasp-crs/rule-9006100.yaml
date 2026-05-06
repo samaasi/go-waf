@@ -1,0 +1,27 @@
+id: "9006100"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /proxy.php
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:image
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:link
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931130;ARGS:referrer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942230;ARGS:referrer
+chain: []
+tags: []

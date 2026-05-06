@@ -1,0 +1,36 @@
+id: "913120"
+msg: Found request filename/argument associated with security scanner
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: /acunetix-wvs-test-for-some-inexistent-file
+conditions:
+    - operator: '@pm'
+      variable: REQUEST_FILENAME|ARGS
+      value: /.adSensepostnottherenonobook /<invalid>hello.html /actSensepostnottherenonotive /acunetix-wvs-test-for-some-inexistent-file /antidisestablishmentarianism /appscan_fingerprint/mac_address /arachni- /cybercop /nessus_is_probing_you_ /nessustest /netsparker- /rfiinc.txt /thereisnowaythat-you-canbethere /w3af/remotefileinclude.html appscan_fingerprint w00tw00t.at.ISC.SANS.DFind w00tw00t.at.blackhats.romanian.anti-sec
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: ip.reput_block_flag
+      value: "1"
+    - type: setvar
+      key: ip.reput_block_reason
+      value: '%{rule.msg}'
+    - type: expirevar
+      key: ip.reput_block_flag
+      value: '%{tx.reput_block_duration}'
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-scanner
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/118/224/541/310
+    - PCI/6.5.10

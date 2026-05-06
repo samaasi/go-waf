@@ -70,6 +70,16 @@ func NewWasmEngine(ctx context.Context, wasmPath string, log domain.Logger) (*Wa
 func (e *WasmEngine) ID() string   { return "wasm-extensibility" }
 func (e *WasmEngine) Name() string { return "WASM Plugin Engine" }
 
+func (e *WasmEngine) GetRules() []domain.RuleMetadata {
+	return []domain.RuleMetadata{
+		{ID: "WASM-BINARY", Name: "WASM Binary Logic", Severity: domain.SeverityHigh, Enabled: true, EngineID: e.ID()},
+	}
+}
+
+func (e *WasmEngine) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
 // LoadRules is a no-op for WASM engine as the logic is encapsulated in the binary
 func (e *WasmEngine) LoadRules() error { return nil }
 

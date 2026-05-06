@@ -3,6 +3,7 @@ package analysis
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/samaasi/go-waf/internal/analysis/engines"
@@ -129,6 +130,20 @@ func (p *Pipeline) InspectResponse(ctx context.Context, req *domain.WafRequest, 
 	var allEvents []*domain.SecurityEvent
 	var mu sync.Mutex
 
+	// Phase 3 specific: Header Sanitization
+	if phase == 3 {
+		sanitized := p.sanitizeResponseHeaders(req.ResponseHeaders)
+		if sanitized {
+			// Headers modified in place, we can log this as an event if needed
+			allEvents = append(allEvents, &domain.SecurityEvent{
+				RuleID:   "WAF-FILTER-HEADERS",
+				RuleName: "Response Header Sanitization",
+				Severity: domain.SeverityLow,
+				Message:  "Stripped dangerous server metadata headers",
+			})
+		}
+	}
+
 	// Phase 4 specific: DLP Engine
 	if phase == 4 && p.dlpEngine != nil && cfg.Dlp.Enabled {
 		dlpEvents := p.dlpEngine.InspectResponse(req.ResponseBody)
@@ -181,6 +196,29 @@ func (p *Pipeline) UpdateConfig(newCfg *config.SecurityConfig) {
 	p.logger.Info("Security configuration updated dynamically")
 }
 
+func (p *Pipeline) GetRules() []domain.RuleMetadata {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	var allRules []domain.RuleMetadata
+	for _, engine := range p.engines {
+		allRules = append(allRules, engine.GetRules()...)
+	}
+	return allRules
+}
+
+func (p *Pipeline) ToggleRule(id string, enabled bool) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for _, engine := range p.engines {
+		if engine.ToggleRule(id, enabled) {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *Pipeline) CountEngines() int {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -192,4 +230,37 @@ func (p *Pipeline) FinishTransaction(req *domain.WafRequest, events []*domain.Se
 		return
 	}
 	p.exporter.LogTransaction(req, events)
+}
+
+func (p *Pipeline) sanitizeResponseHeaders(headers http.Header) bool {
+	dangerousHeaders := []string{
+		"Server",
+		"X-Powered-By",
+		"X-AspNet-Version",
+		"X-AspNetMvc-Version",
+		"X-Generator",
+		"X-Runtime",
+		"Via",
+		"X-Varnish",
+	}
+
+	modified := false
+	for _, h := range dangerousHeaders {
+		if headers.Get(h) != "" {
+			headers.Del(h)
+			modified = true
+		}
+	}
+
+	// Always add security headers if missing
+	if headers.Get("X-Content-Type-Options") == "" {
+		headers.Set("X-Content-Type-Options", "nosniff")
+		modified = true
+	}
+	if headers.Get("X-Frame-Options") == "" {
+		headers.Set("X-Frame-Options", "SAMEORIGIN")
+		modified = true
+	}
+
+	return modified
 }

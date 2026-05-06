@@ -1,0 +1,32 @@
+id: "933190"
+msg: 'PHP Injection Attack: PHP Closing Tag Found'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ?>
+conditions:
+    - operator: '@pm'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: ?>
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.php_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl3
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-php
+    - platform-multi
+    - attack-injection-php
+    - OWASP_CRS
+    - capec/1000/152/242
+    - paranoia-level/3

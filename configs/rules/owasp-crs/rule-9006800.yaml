@@ -1,0 +1,69 @@
+id: "9006800"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931120;ARGS:_xfRedirect
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 941150;ARGS:_xfRedirect
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942230;ARGS:_xfRedirect
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942260;ARGS:_xfRedirect
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931120;ARGS:_xfRequestUri
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 941150;ARGS:_xfRequestUri
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942130;ARGS:_xfRequestUri
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942230;ARGS:_xfRequestUri
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942260;ARGS:_xfRequestUri
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942100;REQUEST_COOKIES:xf_csrf
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942210;REQUEST_COOKIES:xf_csrf
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942440;REQUEST_COOKIES:xf_csrf
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942100;REQUEST_COOKIES:xf_emoji_usage
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942150;REQUEST_COOKIES:xf_emoji_usage
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942410;REQUEST_COOKIES:xf_emoji_usage
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;REQUEST_COOKIES:xf_ls
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942100;REQUEST_COOKIES:xf_session
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942100;REQUEST_COOKIES:xf_user
+chain: []
+tags: []

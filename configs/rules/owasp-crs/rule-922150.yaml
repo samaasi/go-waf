@@ -1,0 +1,23 @@
+id: "922150"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: content-type
+conditions:
+    - operator: '@rx'
+      variable: MULTIPART_PART_HEADERS
+      value: ^content-types*:s*(.*)$
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.multipart_headers_content_types_%{tx.multipart_headers_content_counter}
+      value: '%{tx.1}'
+    - type: setvar
+      key: tx.multipart_headers_content_counter
+      value: "+1"
+chain: []
+tags:
+    - OWASP_CRS

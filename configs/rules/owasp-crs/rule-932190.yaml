@@ -1,0 +1,36 @@
+id: "932190"
+msg: 'Remote Command Execution: Wildcard bypass technique attempt'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: ARGS
+      value: (?:/|\\)(?:[?*]+[a-z/\\]+|[a-z/\\]+[?*]+)
+      transformations:
+        - t:none
+        - t:urlDecode
+        - t:urlDecodeUni
+        - t:normalizePath
+        - t:cmdLine
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.rce_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl3
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-shell
+    - platform-unix
+    - attack-rce
+    - OWASP_CRS
+    - capec/1000/152/248/88
+    - PCI/6.5.2
+    - paranoia-level/3

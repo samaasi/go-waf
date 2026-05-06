@@ -1,0 +1,18 @@
+id: "9002100"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-login.php
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:pwd
+chain: []
+tags: []

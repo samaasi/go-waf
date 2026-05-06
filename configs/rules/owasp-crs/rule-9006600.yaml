@@ -1,0 +1,66 @@
+id: "9006600"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /index.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: GET
+      conditions:
+        - operator: '@streq'
+          variable: REQUEST_METHOD
+          value: GET
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS'
+          value: "1"
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: threads/
+      conditions:
+        - operator: '@rx'
+          variable: REQUEST_URI
+          value: /index.php?threads/.*.d+/$
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942100;ARGS_NAMES
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942230;ARGS_NAMES
+      chain: []
+      tags: []
+tags: []

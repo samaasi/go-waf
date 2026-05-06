@@ -1,0 +1,19 @@
+id: "922140"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@gt'
+      variable: '&MULTIPART_PART_HEADERS'
+      value: "0"
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.multipart_headers_content_counter
+      value: "0"
+chain: []
+tags:
+    - OWASP_CRS

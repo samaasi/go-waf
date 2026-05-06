@@ -35,6 +35,16 @@ func NewSchemaEngine(specPath string, log domain.Logger) *SchemaEngine {
 func (e *SchemaEngine) ID() string   { return "openapi-positive-security" }
 func (e *SchemaEngine) Name() string { return "OpenAPI Schema Validator" }
 
+func (e *SchemaEngine) GetRules() []domain.RuleMetadata {
+	return []domain.RuleMetadata{
+		{ID: "SCHEMA_GLOBAL", Name: "Global Schema Validation", Severity: domain.SeverityHigh, Enabled: true, EngineID: e.ID()},
+	}
+}
+
+func (e *SchemaEngine) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
 func (e *SchemaEngine) LoadRules() error {
 	loader := openapi3.NewLoader()
 	doc, err := loader.LoadFromFile(e.specPath)

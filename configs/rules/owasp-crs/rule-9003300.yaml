@@ -1,0 +1,18 @@
+id: "9003300"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /index.php/apps/ownnote/
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /index.php/apps/ownnote/
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: "941150"
+chain: []
+tags: []

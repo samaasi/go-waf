@@ -1,0 +1,27 @@
+id: "921200"
+msg: LDAP Injection Attack
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: ^[^:()&|!<>~]*)s*(?:((?:[^,()=&|!<>~]+[><~]?=|s*[&!|]s*(?:)|()?s*)|)s*(s*[&|!]s*|[&!|]s*([^()=&|!<>~]+[><~]?=[^:()&|!<>~]*)
+      transformations:
+        - t:none
+        - t:htmlEntityDecode
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-ldap
+    - platform-multi
+    - OWASP_CRS
+    - capec/1000/152/248/136

@@ -1,0 +1,21 @@
+id: "9006930"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: notices/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /admin.php?notices/(?:.*.)?d+/save$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:message
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:title
+chain: []
+tags: []

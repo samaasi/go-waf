@@ -48,6 +48,24 @@ func NewCelEngine(rulePath string, log domain.Logger) (*CelEngine, error) {
 func (e *CelEngine) ID() string   { return "cel-programmable" }
 func (e *CelEngine) Name() string { return "CEL Programmable Engine" }
 
+func (e *CelEngine) GetRules() []domain.RuleMetadata {
+	res := make([]domain.RuleMetadata, len(e.rules))
+	for i, r := range e.rules {
+		res[i] = domain.RuleMetadata{
+			ID:       r.ID,
+			Name:     r.Name,
+			Severity: r.Severity,
+			Enabled:  true,
+			EngineID: e.ID(),
+		}
+	}
+	return res
+}
+
+func (e *CelEngine) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
 func (e *CelEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
 	if phase > 2 {
 		return nil

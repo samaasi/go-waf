@@ -1,0 +1,21 @@
+id: "9002142"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: /wp-json/wp/v
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /wp-json/wp/v[0-9]+/media
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: "200002"
+    - type: ctl
+      key: ruleRemoveById
+      value: "200003"
+chain: []
+tags: []

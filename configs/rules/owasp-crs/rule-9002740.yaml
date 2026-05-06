@@ -1,0 +1,87 @@
+id: "9002740"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-admin/admin-ajax.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: widgets-order
+      conditions:
+        - operator: '@streq'
+          variable: ARGS:action
+          value: widgets-order
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS:action'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:sidebars[sidebar-1]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:sidebars[sidebar-1]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:sidebars[sidebar-2]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:sidebars[sidebar-2]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:sidebars[sidebar-3]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:sidebars[sidebar-3]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:sidebars[sidebar-4]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:sidebars[sidebar-4]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:sidebars[sidebar-5]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:sidebars[sidebar-5]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:sidebars[sidebar-6]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:sidebars[sidebar-6]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:sidebars[sidebar-7]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:sidebars[sidebar-7]
+      chain: []
+      tags: []
+tags: []

@@ -1,0 +1,26 @@
+id: "920430"
+msg: HTTP protocol version is not allowed by policy
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@within'
+      variable: REQUEST_PROTOCOL
+      value: '%{tx.allowed_http_versions}'
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272
+    - PCI/6.5.10

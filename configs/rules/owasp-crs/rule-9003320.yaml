@@ -1,0 +1,18 @@
+id: "9003320"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /remote.php/dav/addressbooks/
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /remote.php/dav/addressbooks/
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.allowed_request_content_type
+      value: '%{tx.allowed_request_content_type} |text/vcard|'
+chain: []
+tags: []

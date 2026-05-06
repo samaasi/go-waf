@@ -1,0 +1,17 @@
+id: "901420"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: DURATION
+      value: (..)$
+      transformations: []
+actions:
+    - type: setvar
+      key: TX.sampling_rnd100
+      value: '%{TX.sampling_rnd100}%{TX.1}'
+chain: []
+tags: []

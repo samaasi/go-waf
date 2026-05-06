@@ -1,0 +1,55 @@
+id: "920300"
+msg: Request Missing an Accept Header
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&REQUEST_HEADERS:Accept'
+      value: "0"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: options
+      conditions:
+        - operator: '!@rx'
+          variable: REQUEST_METHOD
+          value: ^OPTIONS$
+          transformations: []
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '!@pm'
+          variable: REQUEST_HEADERS:User-Agent
+          value: AppleWebKit Android
+          transformations:
+            - t:none
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl2
+          value: +%{tx.notice_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - OWASP_CRS
+    - capec/1000/210/272
+    - PCI/6.5.10
+    - paranoia-level/2

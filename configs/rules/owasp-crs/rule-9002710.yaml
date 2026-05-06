@@ -1,0 +1,66 @@
+id: "9002710"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-admin/admin-ajax.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: heartbeat
+      conditions:
+        - operator: '@streq'
+          variable: ARGS:action
+          value: heartbeat
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS:action'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: attack-sqli;ARGS:data[wp_autosave][post_title]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:data[wp_autosave][content]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS_NAMES:data[wp-refresh-post-lock][post_id]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS_NAMES:data[wp-refresh-post-lock][lock]
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS_NAMES:data[wp-check-locked-posts][]
+        - type: ctl
+          key: ruleRemoveById
+          value: "921180"
+        - type: ctl
+          key: ruleRemoveById
+          value: "920272"
+      chain: []
+      tags: []
+tags: []

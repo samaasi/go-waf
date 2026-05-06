@@ -1,0 +1,32 @@
+id: "931110"
+msg: 'Possible Remote File Inclusion (RFI) Attack: Common RFI Vulnerable Parameter Name used w/URL Payload'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: QUERY_STRING|REQUEST_BODY
+      value: (?i)(?:bincludes*([^)]*|mosConfig_absolute_path|_CONF[path]|_SERVER[DOCUMENT_ROOT]|GALLERY_BASEDIR|path[docroot]|appserv_root|config[root_dir])=(?:file|ftps?|https?)://
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.rfi_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-rfi
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/175/253

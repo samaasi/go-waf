@@ -1,0 +1,33 @@
+id: "901350"
+msg: Enabling forced body inspection for ASCII content
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: TX:enforce_bodyproc_urlencoded
+      value: "1"
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: urlencoded
+      conditions:
+        - operator: '!@rx'
+          variable: REQBODY_PROCESSOR
+          value: (?:URLENCODED|MULTIPART|XML|JSON)
+          transformations: []
+      actions:
+        - type: ctl
+          key: requestBodyProcessor
+          value: URLENCODED
+      chain: []
+      tags: []
+tags: []

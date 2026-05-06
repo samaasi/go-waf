@@ -1,0 +1,17 @@
+id: "901430"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:sampling_rnd100
+      value: ^[a-f]*([0-9])[a-f]*([0-9])
+      transformations: []
+actions:
+    - type: setvar
+      key: TX.sampling_rnd100
+      value: '%{TX.1}%{TX.2}'
+chain: []
+tags: []

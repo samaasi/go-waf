@@ -1,0 +1,15 @@
+id: "9006901"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@endsWith'
+      variable: REQUEST_URI
+      value: /admin.php
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags: []

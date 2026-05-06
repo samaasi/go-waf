@@ -1,0 +1,14 @@
+id: "900002"
+msg: IP Brute Force Detected
+severity: 5
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@gt'
+      variable: IP.hit_count
+      value: "5"
+      transformations: []
+actions: []
+chain: []
+tags: []

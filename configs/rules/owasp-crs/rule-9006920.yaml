@@ -1,0 +1,39 @@
+id: "9006920"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: /admin
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /admin.php?users/.*.d+/save$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: "200003"
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:custom_fields[occupation]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:custom_fields[personal_quote]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:profile[about]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:profile[signature]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:custom_fields[sexuality]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931130;ARGS:custom_fields[picture]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931130;ARGS:profile[website]
+chain: []
+tags: []

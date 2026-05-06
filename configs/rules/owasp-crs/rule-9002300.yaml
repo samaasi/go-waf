@@ -1,0 +1,33 @@
+id: "9002300"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: d
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES:_wp_session
+      value: ^[0-9a-f]+||d+||d+$
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&REQUEST_COOKIES:_wp_session'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942100;REQUEST_COOKIES:_wp_session
+      chain: []
+      tags: []
+tags: []

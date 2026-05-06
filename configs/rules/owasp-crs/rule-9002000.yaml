@@ -1,0 +1,15 @@
+id: "9002000"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:crs_exclusions_wordpress|TX:crs_exclusions_wordpress'
+      value: "0"
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags: []

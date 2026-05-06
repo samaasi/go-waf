@@ -1,0 +1,21 @@
+id: "9006910"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /admin
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /admin.php?users/.*.d+/edit$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:profile[about]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931130;ARGS:profile[website]
+chain: []
+tags: []

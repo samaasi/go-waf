@@ -1,0 +1,28 @@
+id: "912170"
+msg: 'Potential Denial of Service (DoS) Attack from %{tx.real_ip} - # of Request Bursts: %{ip.dos_burst_counter}'
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@ge'
+      variable: IP:DOS_BURST_COUNTER
+      value: "2"
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: ip.dos_block
+      value: "1"
+    - type: expirevar
+      key: ip.dos_block
+      value: '%{tx.dos_block_timeout}'
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - paranoia-level/1
+    - attack-dos
+    - OWASP_CRS
+    - capec/1000/210/227/469

@@ -1,0 +1,30 @@
+id: "944130"
+msg: Suspicious Java class detected
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: javax.script.ScriptEngineManager
+conditions:
+    - operator: '@pm'
+      variable: ARGS|ARGS_NAMES|REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_FILENAME|REQUEST_HEADERS|XML:/*|XML://@*
+      value: com.opensymphony.xwork2 com.sun.org.apache java.io.BufferedInputStream java.io.BufferedReader java.io.ByteArrayInputStream java.io.ByteArrayOutputStream java.io.CharArrayReader java.io.DataInputStream java.io.File java.io.FileOutputStream java.io.FilePermission java.io.FileWriter java.io.FilterInputStream java.io.FilterOutputStream java.io.FilterReader java.io.InputStream java.io.InputStreamReader java.io.LineNumberReader java.io.ObjectOutputStream java.io.OutputStream java.io.PipedOutputStream java.io.PipedReader java.io.PrintStream java.io.PushbackInputStream java.io.Reader java.io.StringReader java.lang.Class java.lang.Integer java.lang.Number java.lang.Object java.lang.Process java.lang.ProcessBuilder java.lang.reflect java.lang.Runtime java.lang.String java.lang.StringBuilder java.lang.System javax.script.ScriptEngineManager org.apache.commons org.apache.struts org.apache.struts2 org.omg.CORBA java.beans.XMLDecode
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.rce_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-java
+    - platform-multi
+    - attack-rce
+    - OWASP_CRS
+    - capec/1000/152/248
+    - PCI/6.5.2
+    - paranoia-level/1

@@ -1,0 +1,17 @@
+id: "901166"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:static_extensions'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.static_extensions
+      value: /.jpg/ /.jpeg/ /.png/ /.gif/ /.js/ /.css/ /.ico/ /.svg/ /.webp/
+chain: []
+tags: []

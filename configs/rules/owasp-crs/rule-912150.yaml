@@ -1,0 +1,42 @@
+id: "912150"
+msg: ""
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_BASENAME
+      value: .*?(.[a-z0-9]{1,10})?$
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.extension
+      value: /%{TX.1}/
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '!@within'
+          variable: TX:EXTENSION
+          value: '%{tx.static_extensions}'
+          transformations: []
+      actions:
+        - type: setvar
+          key: ip.dos_counter
+          value: "+1"
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-dos
+    - OWASP_CRS
+    - capec/1000/210/227/469

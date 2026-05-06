@@ -1,0 +1,33 @@
+id: "942470"
+msg: SQL Injection Attack
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: autonomous_transaction
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|!REQUEST_COOKIES:/_pk_ref/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:(?:xp_(?:reg(?:re(?:movemultistring|ad)|delete(?:value|key)|enum(?:value|key)s|addmultistring|write)|(?:servicecontro|cmdshel)l|e(?:xecresultset|numdsn)|ntsec(?:_enumdomains)?|terminate(?:_process)?|availablemedia|loginconfig|filelist|dirtree|makecab)|s(?:p_(?:(?:addextendedpro|sqlexe)c|p(?:assword|repare)|replwritetovarbin|is_srvrolemember|execute(?:sql)?|makewebtask|oacreate|help)|ql_(?:longvarchar|variant))|open(?:owa_util|rowset|query)|(?:n?varcha|tbcreato)r|autonomous_transaction|db(?:a_users|ms_java)|utl_(?:file|http)))
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

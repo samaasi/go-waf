@@ -1,0 +1,26 @@
+id: "920271"
+msg: Invalid character in request (non printable characters)
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@validateByteRange'
+      variable: REQUEST_URI|REQUEST_HEADERS|ARGS|ARGS_NAMES
+      value: 9,10,13,32-126,128-255
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - OWASP_CRS
+    - capec/1000/210/272
+    - paranoia-level/2

@@ -1,0 +1,18 @@
+id: "9003350"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /index.php/apps/bookmarks/
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /index.php/apps/bookmarks/
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: "931130"
+chain: []
+tags: []

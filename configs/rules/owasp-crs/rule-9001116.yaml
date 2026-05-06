@@ -1,0 +1,23 @@
+id: "9001116"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /user/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /user/[0-9]+/edit$
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:current_pass
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:pass[pass1]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:pass[pass2]
+chain: []
+tags: []

@@ -1,0 +1,19 @@
+id: "912140"
+msg: ""
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: IP:DOS_BLOCK
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-dos

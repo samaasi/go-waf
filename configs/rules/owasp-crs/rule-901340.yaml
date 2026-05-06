@@ -1,0 +1,17 @@
+id: "901340"
+msg: Enabling body inspection
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: urlencoded
+conditions:
+    - operator: '!@rx'
+      variable: REQBODY_PROCESSOR
+      value: (?:URLENCODED|MULTIPART|XML|JSON)
+      transformations: []
+actions:
+    - type: ctl
+      key: forceRequestBodyVariable
+      value: "On"
+chain: []
+tags: []

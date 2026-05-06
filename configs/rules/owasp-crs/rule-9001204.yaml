@@ -1,0 +1,23 @@
+id: "9001204"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /node/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /node/[0-9]+/edit$
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:body[0][value]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942410;ARGS:uid[0][target_id]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 932110;ARGS:destination
+chain: []
+tags: []

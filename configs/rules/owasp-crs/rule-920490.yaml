@@ -1,0 +1,39 @@
+id: "920490"
+msg: Request header x-up-devcap-post-charset detected in combination with prefix 'UP' to User-Agent
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@ge'
+      variable: '&REQUEST_HEADERS:x-up-devcap-post-charset'
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: up
+      conditions:
+        - operator: '@rx'
+          variable: REQUEST_HEADERS:User-Agent
+          value: ^(?i)up
+          transformations:
+            - t:none
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl3
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - language-aspnet
+    - platform-windows
+    - attack-protocol
+    - OWASP_CRS
+    - capec/1000/210/272
+    - paranoia-level/3

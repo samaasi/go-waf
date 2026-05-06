@@ -1,0 +1,17 @@
+id: "901165"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:restricted_headers'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.restricted_headers
+      value: /accept-charset/ /content-encoding/ /proxy/ /lock-token/ /content-range/ /if/
+chain: []
+tags: []

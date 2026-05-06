@@ -1,0 +1,31 @@
+id: "980110"
+msg: 'Correlated Attack Attempt Identified: (Total Score: %{tx.anomaly_score}) Inbound Attack (Inbound Anomaly Score: %{TX.INBOUND_ANOMALY_SCORE}) + Outbound Application Error (Outbound Anomaly Score: %{TX.OUTBOUND_ANOMALY_SCORE})'
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@ge'
+      variable: '&TX:''/AVAILABILITY\/APP_NOT_AVAIL/'''
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@ge'
+          variable: '&TX:''/WEB_ATTACK/'''
+          value: "1"
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+tags:
+    - event-correlation

@@ -1,0 +1,18 @@
+id: "9003140"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: php/apps/files_sharing/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /ocs/v[0-9]+.php/apps/files_sharing/
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.allowed_methods
+      value: '%{tx.allowed_methods} PUT DELETE'
+chain: []
+tags: []

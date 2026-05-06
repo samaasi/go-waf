@@ -1,0 +1,31 @@
+id: "933161"
+msg: 'PHP Injection Attack: Low-Value PHP Function Call Found'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_FILENAME|ARGS_NAMES|ARGS|XML:/*
+      value: (?i)b(?:i(?:s(?:_(?:in(?:t(?:eger)?|finite)|n(?:u(?:meric|ll)|an)|(?:calla|dou)ble|s(?:calar|tring)|f(?:inite|loat)|re(?:source|al)|l(?:ink|ong)|a(?:rray)?|object|bool)|set)|n(?:(?:clud|vok)e|t(?:div|val))|(?:mplod|dat)e|conv)|s(?:t(?:r(?:(?:le|sp)n|coll)|at)|(?:e(?:rializ|ttyp)|huffl)e|i(?:milar_text|zeof|nh?)|p(?:liti?|rintf)|(?:candi|ubst)r|y(?:mlink|slog)|o(?:undex|rt)|leep|rand|qrt)|f(?:ile(?:(?:siz|typ)e|owner|pro)|l(?:o(?:atval|ck|or)|ush)|(?:rea|mo)d|t(?:ell|ok)|unction|close|gets|stat|eof)|c(?:h(?:o(?:wn|p)|eckdate|root|dir|mod)|o(?:(?:(?:nsta|u)n|mpac)t|sh?|py)|lose(?:dir|log)|(?:urren|ryp)t|eil)|e(?:x(?:(?:trac|i)t|p(?:lode)?)|a(?:ster_da(?:te|ys)|ch)|r(?:ror_log|egi?)|mpty|cho|nd)|l(?:o(?:g(?:1[0p])?|caltime)|i(?:nk(?:info)?|st)|(?:cfirs|sta)t|evenshtein|trim)|d(?:i(?:(?:skfreespac)?e|r(?:name)?)|e(?:fined?|coct)|(?:oubleva)?l|ate)|r(?:e(?:(?:quir|cod|nam)e|adlin[ek]|wind|set)|an(?:ge|d)|ound|sort|trim)|m(?:b(?:split|ereg)|i(?:crotime|n)|a(?:i[ln]|x)|etaphone|y?sql|hash)|u(?:n(?:(?:tain|se)t|iqid|link)|s(?:leep|ort)|cfirst|mask)|a(?:s(?:(?:se|o)rt|inh?)|r(?:sort|ray)|tan[2h]?|cosh?|bs)|t(?:e(?:xtdomain|mpnam)|a(?:int|nh?)|ouch|ime|rim)|h(?:e(?:ader(?:s_(?:lis|sen)t)?|brev)|ypot|ash)|p(?:a(?:thinfo|ck)|r(?:intf?|ev)|close|o[sw]|i)|g(?:et(?:t(?:ext|ype)|date)|mdate)|o(?:penlog|ctdec|rd)|b(?:asename|indec)|n(?:atsor|ex)t|k(?:sort|ey)|quotemeta|wordwrap|virtual|join)(?:s|/*.**/|//.*|#.*)*(.*)
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.php_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl3
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-php
+    - platform-multi
+    - attack-injection-php
+    - OWASP_CRS
+    - capec/1000/152/242
+    - paranoia-level/3

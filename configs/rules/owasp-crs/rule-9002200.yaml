@@ -1,0 +1,21 @@
+id: "9002200"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-cron.php
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: "920180"
+    - type: ctl
+      key: ruleRemoveById
+      value: "920300"
+chain: []
+tags: []

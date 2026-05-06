@@ -1,0 +1,30 @@
+id: "942180"
+msg: Detects basic SQL authentication bypass attempts 1/3
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: between
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:["'`](?:s*?(?:(?:between|x?or|and|div)[ws-]+s*?[+<>=(),-]s*?[d"'`]|like(?:[ws-]+s*?[+<>=(),-]s*?[d"'`]|W+[w"'`(])|[!=|](?:[ds!=+-]+.*?["'`(].*?|[ds!=]+.*?d+)$|[^ws]?=s*?["'`])|(?:W*?[+=]+W*?|[<>~]+)["'`])|(?:/*)+["'`]+s?(?:/*|--|{|#)?|d["'`]s+["'`]s+d|wheres[sw.,-]+s=|^admins*?["'`]|siss*?0W)
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

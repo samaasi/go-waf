@@ -1,0 +1,27 @@
+id: "920470"
+msg: Illegal Content-Type header
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: boundary
+conditions:
+    - operator: '!@rx'
+      variable: REQUEST_HEADERS:Content-Type
+      value: ^[w/.+-]+(?:s?;s?(?:action|boundary|charset|type|start(?:-info)?)s?=s?['"w.()+,/:=?<>@-]+)*$
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/255/153
+    - PCI/12.1

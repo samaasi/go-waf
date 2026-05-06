@@ -1,0 +1,26 @@
+id: "922110"
+msg: 'Illegal MIME Multipart Header content-type: charset parameter'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@rx'
+      variable: TX:/MULTIPART_HEADERS_CONTENT_TYPES_*/
+      value: ^(?:(?:*|[^!"(),/:-?[-]{}]+)/(?:*|[^!"(),/:-?[-]{}]+)|*)(?:[sx0b]*;[sx0b]*(?:charset[sx0b]*=[sx0b]*"?(?:iso-8859-15?|utf-8|windows-1252)b"?|(?:[^sx0b-"(),/:-?[-]c{}]|c(?:[^!"(),/:-?[-]h{}]|h(?:[^!"(),/:-?[-]a{}]|a(?:[^!"(),/:-?[-]r{}]|r(?:[^!"(),/:-?[-]s{}]|s(?:[^!"(),/:-?[-]e{}]|e[^!"(),/:-?[-]t{}]))))))[^!"(),/:-?[-]{}]*[sx0b]*=[sx0b]*[^!(),/:-?[-]{}]+);?)*(?:[sx0b]*,[sx0b]*(?:(?:*|[^!"(),/:-?[-]{}]+)/(?:*|[^!"(),/:-?[-]{}]+)|*)(?:[sx0b]*;[sx0b]*(?:charset[sx0b]*=[sx0b]*"?(?:iso-8859-15?|utf-8|windows-1252)b"?|(?:[^sx0b-"(),/:-?[-]c{}]|c(?:[^!"(),/:-?[-]h{}]|h(?:[^!"(),/:-?[-]a{}]|a(?:[^!"(),/:-?[-]r{}]|r(?:[^!"(),/:-?[-]s{}]|s(?:[^!"(),/:-?[-]e{}]|e[^!"(),/:-?[-]t{}]))))))[^!"(),/:-?[-]{}]*[sx0b]*=[sx0b]*[^!(),/:-?[-]{}]+);?)*)*$
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - OWASP_CRS
+    - capec/272/220
+    - paranoia-level/1

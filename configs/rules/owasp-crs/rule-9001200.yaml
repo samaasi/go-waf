@@ -1,0 +1,20 @@
+id: "9001200"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /node/add/article
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:body[0][value]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942410;ARGS:uid[0][target_id]
+chain: []
+tags: []

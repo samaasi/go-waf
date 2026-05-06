@@ -1,0 +1,63 @@
+id: "932200"
+msg: RCE Bypass Technique
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: /
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: ([*?`\'][^/n]+/|$[({[#a-zA-Z0-9]|/[^/]+?[*?`\'])
+      transformations:
+        - t:none
+        - t:lowercase
+        - t:urlDecodeUni
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: /
+      conditions:
+        - operator: '@rx'
+          variable: MATCHED_VAR
+          value: /
+          transformations:
+            - t:none
+            - t:urlDecodeUni
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: s
+      conditions:
+        - operator: '@rx'
+          variable: MATCHED_VAR
+          value: s
+          transformations:
+            - t:none
+            - t:urlDecodeUni
+      actions:
+        - type: setvar
+          key: tx.lfi_score
+          value: +%{tx.critical_anomaly_score}
+        - type: setvar
+          key: tx.anomaly_score_pl2
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-rce
+    - paranoia-level/2
+    - OWASP_CRS
+    - capec/1000/152/248/88
+    - PCI/6.5.2

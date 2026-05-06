@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"strings"
@@ -49,14 +50,17 @@ type CRSLangEngine struct {
 	rules     []CRSLangRule
 	aho       *ahocorasick.Matcher
 	keywords  []string
-	store     domain.CollectionStore
+	store         domain.CollectionStore
+	disabledRules map[string]bool
+	mu            sync.RWMutex
 }
 
 func NewCRSLangEngine(rulesPath string, store domain.CollectionStore) *CRSLangEngine {
 	return &CRSLangEngine{
-		rulesPath: rulesPath,
-		regexes:   make(map[string]*regexp.Regexp),
-		store:     store,
+		rulesPath:     rulesPath,
+		regexes:       make(map[string]*regexp.Regexp),
+		store:         store,
+		disabledRules: make(map[string]bool),
 	}
 }
 
@@ -117,7 +121,50 @@ func (e *CRSLangEngine) registerRuleRecursive(rule *CRSLangRule) {
 	}
 }
 
+func (e *CRSLangEngine) GetRules() []domain.RuleMetadata {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	res := make([]domain.RuleMetadata, len(e.rules))
+	for i, r := range e.rules {
+		res[i] = domain.RuleMetadata{
+			ID:       r.ID,
+			Name:     r.Msg,
+			Severity: r.Severity,
+			Enabled:  !e.disabledRules[r.ID],
+			EngineID: e.ID(),
+		}
+	}
+	return res
+}
+
+func (e *CRSLangEngine) ToggleRule(id string, enabled bool) bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	found := false
+	for _, r := range e.rules {
+		if r.ID == id {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return false
+	}
+
+	if enabled {
+		delete(e.disabledRules, id)
+	} else {
+		e.disabledRules[id] = true
+	}
+	return true
+}
+
 func (e *CRSLangEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
 	var events []*domain.SecurityEvent
 	matchedKeywords := make(map[string]bool)
 	if e.aho != nil && phase <= 2 {
@@ -145,6 +192,9 @@ func (e *CRSLangEngine) Evaluate(ctx context.Context, req *domain.WafRequest, ph
 
 	for _, rule := range e.rules {
 		if rule.Phase != phase {
+			continue
+		}
+		if e.disabledRules[rule.ID] {
 			continue
 		}
 		if req.DisabledRules != nil && req.DisabledRules[rule.ID] {
@@ -371,6 +421,23 @@ func (e *CRSLangEngine) extractVariableMap(ctx context.Context, req *domain.WafR
 func (e *CRSLangEngine) extractSingleVariableMap(ctx context.Context, req *domain.WafRequest, variable string, col string) map[string][]string {
 	col = strings.Trim(col, "/\"'")
 	res := make(map[string][]string)
+
+	if variable == "ARGS" && strings.HasPrefix(col, "grpc.") {
+		// Example: ARGS:grpc.field.1
+		if strings.HasPrefix(req.Headers.Get("Content-Type"), "application/grpc") {
+			frames, _ := utils.ParseGrpcFrames(req.Body)
+			for _, frame := range frames {
+				fields := utils.ParseProtobuf(frame.Payload)
+				if vals, ok := fields[col]; ok {
+					res[col] = append(res[col], vals...)
+				}
+			}
+			if len(res) > 0 {
+				return res
+			}
+		}
+		return nil
+	}
 
 	if variable == "ARGS" && strings.HasPrefix(col, "json.") {
 		path := strings.TrimPrefix(col, "json.")

@@ -1,0 +1,31 @@
+id: "942120"
+msg: 'SQL Injection Attack: SQL Operator Detected'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: between
+conditions:
+    - operator: '@rx'
+      variable: ARGS_NAMES|ARGS|XML:/*
+      value: (?i:(?:(?:^|W)in[+s]*([sd"]+[^()]*)|b(?:r(?:egexp|like)|isnull|xor)b|<(?:>(?:s+binary)?|=>?|<)|r(?:egexp|like)s+binary|nots+betweens+0s+and|(?:like|is)s+null|>[=>]||||!=|&&))
+      transformations:
+        - t:none
+        - t:utf8toUnicode
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

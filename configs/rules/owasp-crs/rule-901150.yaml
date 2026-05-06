@@ -1,0 +1,17 @@
+id: "901150"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:do_reput_block'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.do_reput_block
+      value: "0"
+chain: []
+tags: []

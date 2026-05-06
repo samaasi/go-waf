@@ -1,0 +1,21 @@
+id: "9006320"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /account/account-details
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931130;ARGS:custom_fields[picture]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:about_html
+chain: []
+tags: []

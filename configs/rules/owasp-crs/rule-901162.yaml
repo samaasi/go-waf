@@ -1,0 +1,17 @@
+id: "901162"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:allowed_request_content_type'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.allowed_request_content_type
+      value: '|application/x-www-form-urlencoded| |multipart/form-data| |text/xml| |application/xml| |application/soap+xml| |application/json|'
+chain: []
+tags: []

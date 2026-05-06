@@ -1,0 +1,48 @@
+id: "954130"
+msg: IIS Information Leakage
+severity: 10
+phase: 4
+action: block
+pre_filter_keyword: "404"
+conditions:
+    - operator: '!@rx'
+      variable: RESPONSE_STATUS
+      value: ^404$
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: bserver error in
+      conditions:
+        - operator: '@rx'
+          variable: RESPONSE_BODY
+          value: bServer Error in.{0,50}?bApplicationb
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: auditLogParts
+          value: +E
+        - type: setvar
+          key: tx.outbound_anomaly_score_pl1
+          value: +%{tx.error_anomaly_score}
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.error_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-iis
+    - platform-windows
+    - attack-disclosure
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/118/116
+    - PCI/6.5.6

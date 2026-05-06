@@ -1,0 +1,25 @@
+id: "920160"
+msg: Content-Length HTTP header is not numeric
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: d
+conditions:
+    - operator: '!@rx'
+      variable: REQUEST_HEADERS:Content-Length
+      value: ^d+$
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272

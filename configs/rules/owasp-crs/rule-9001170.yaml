@@ -1,0 +1,20 @@
+id: "9001170"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /admin/config/content/formats/manage/full_html
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:editor[settings][toolbar][button_groups]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:filters[filter_html][settings][allowed_html]
+chain: []
+tags: []

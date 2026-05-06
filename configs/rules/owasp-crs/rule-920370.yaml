@@ -1,0 +1,41 @@
+id: "920370"
+msg: Argument value too long
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:ARG_LENGTH'
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@gt'
+          variable: ARGS
+          value: '%{tx.arg_length}'
+          transformations:
+            - t:none
+            - t:length
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272

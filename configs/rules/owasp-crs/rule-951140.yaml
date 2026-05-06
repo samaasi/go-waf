@@ -1,0 +1,48 @@
+id: "951140"
+msg: EMC SQL Information Leakage
+severity: 25
+phase: 4
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: TX:sql_error_match
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: 'has occurred in the vicinity of:'
+      conditions:
+        - operator: '@rx'
+          variable: RESPONSE_BODY
+          value: (?i:[DM_QUERY_E_SYNTAX]|has occurred in the vicinity of:)
+          transformations: []
+      actions:
+        - type: ctl
+          key: auditLogParts
+          value: +E
+        - type: setvar
+          key: tx.outbound_anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+        - type: setvar
+          key: tx.sql_injection_score
+          value: +%{tx.critical_anomaly_score}
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-emc
+    - attack-disclosure
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/118/116/54

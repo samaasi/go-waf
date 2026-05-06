@@ -1,0 +1,41 @@
+id: "912161"
+msg: ""
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@ge'
+      variable: IP:DOS_COUNTER
+      value: '%{tx.dos_counter_threshold}'
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@ge'
+          variable: '&IP:DOS_BURST_COUNTER'
+          value: "1"
+          transformations: []
+      actions:
+        - type: setvar
+          key: ip.dos_burst_counter
+          value: "2"
+        - type: expirevar
+          key: ip.dos_burst_counter
+          value: '%{tx.dos_burst_time_slice}'
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-dos
+    - OWASP_CRS
+    - capec/1000/210/227/469

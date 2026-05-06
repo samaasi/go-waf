@@ -1,0 +1,32 @@
+id: "950130"
+msg: Directory Listing
+severity: 10
+phase: 4
+action: block
+pre_filter_keyword: title>index of
+conditions:
+    - operator: '@rx'
+      variable: RESPONSE_BODY
+      value: (?:<(?:TITLE>Index of.*?<H|title>Index of.*?<h)1>Index of|>[To Parent Directory]</[Aa]><br>)
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.outbound_anomaly_score_pl1
+      value: +%{tx.error_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.error_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-disclosure
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/118/116/54/127
+    - PCI/6.5.6

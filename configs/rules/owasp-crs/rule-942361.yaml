@@ -1,0 +1,30 @@
+id: "942361"
+msg: Detects basic SQL injection based on keyword alter or union
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: alter
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:^[Wd]+s*?(?:alter|union)b)
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

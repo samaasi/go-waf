@@ -1,0 +1,24 @@
+id: "920620"
+msg: Multiple Content-Type Request Headers
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@gt'
+      variable: '&REQUEST_HEADERS:Content-Type'
+      value: "1"
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS

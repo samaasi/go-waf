@@ -1,0 +1,36 @@
+id: "913101"
+msg: Found User-Agent associated with scripting/generic HTTP client
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: winhttp.winhttprequest
+conditions:
+    - operator: '@pm'
+      variable: REQUEST_HEADERS:User-Agent
+      value: dav.pm/v libwww-perl mozilla/4.0 (compatible) mozilla/4.0 (compatible; msie 6.0; win32) mozilla/5.0 sf/ mozilla/5.0 sf// python-httplib2 python-requests Python-urllib typhoeus winhttp.winhttprequest
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: ip.reput_block_flag
+      value: "1"
+    - type: setvar
+      key: ip.reput_block_reason
+      value: '%{rule.msg}'
+    - type: expirevar
+      key: ip.reput_block_flag
+      value: '%{tx.reput_block_duration}'
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-scripting
+    - OWASP_CRS
+    - capec/1000/118/224/541/310
+    - PCI/6.5.10
+    - paranoia-level/2

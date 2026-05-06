@@ -1,0 +1,37 @@
+id: "941170"
+msg: 'NoScript XSS InjectionChecker: Attribute Injection'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|REQUEST_HEADERS:Referer|ARGS_NAMES|ARGS|XML:/*
+      value: (?i)(?:W|^)(?:javascript:(?:[sS]+[=\([.<]|[sS]*?(?:bnameb|\[ux]d))|data:(?:(?:[a-z]w+/w[w+-]+w)?[;,]|[sS]*?;[sS]*?b(?:base64|charset=)|[sS]*?,[sS]*?<[sS]*?w[sS]*?>))|@W*?iW*?mW*?pW*?oW*?rW*?tW*?(?:/*[sS]*?)?(?:["']|W*?uW*?rW*?l[sS]*?()|W*?-W*?mW*?oW*?zW*?-W*?bW*?iW*?nW*?dW*?iW*?nW*?g[sS]*?:[sS]*?W*?uW*?rW*?l[sS]*?(
+      transformations:
+        - t:none
+        - t:utf8toUnicode
+        - t:urlDecodeUni
+        - t:htmlEntityDecode
+        - t:jsDecode
+        - t:cssDecode
+        - t:removeNulls
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.xss_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-xss
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242

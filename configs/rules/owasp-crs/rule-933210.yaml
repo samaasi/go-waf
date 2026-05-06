@@ -1,0 +1,34 @@
+id: "933210"
+msg: 'PHP Injection Attack: Variable Function Call Found'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_FILENAME|ARGS_NAMES|ARGS|XML:/*
+      value: (?:(?:(|[)[a-zA-Z0-9_.$"'[](){}/*s]+(?:)|])[0-9_.$"'[](){}/*s]*([a-zA-Z0-9_.$"'[](){}/*s].*)|([s]*string[s]*)[s]*(?:"|'))
+      transformations:
+        - t:none
+        - t:urlDecode
+        - t:replaceComments
+        - t:compressWhitespace
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.php_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-php
+    - platform-multi
+    - attack-injection-php
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242

@@ -1,0 +1,20 @@
+id: "900001"
+msg: ""
+severity: 5
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REMOTE_ADDR
+      value: .*
+      transformations: []
+actions:
+    - type: setvar
+      key: IP.hit_count
+      value: "+1"
+    - type: expirevar
+      key: IP.hit_count
+      value: "60"
+chain: []
+tags: []

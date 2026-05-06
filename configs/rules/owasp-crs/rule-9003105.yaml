@@ -1,0 +1,45 @@
+id: "9003105"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: PUT
+conditions:
+    - operator: '@streq'
+      variable: REQUEST_METHOD
+      value: PUT
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: /remote.php/webdav
+      conditions:
+        - operator: '@contains'
+          variable: REQUEST_URI
+          value: /remote.php/webdav
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveById
+          value: 920000-920999
+        - type: ctl
+          key: ruleRemoveById
+          value: 932000-932999
+        - type: ctl
+          key: ruleRemoveById
+          value: "921150"
+        - type: ctl
+          key: ruleRemoveById
+          value: "930110"
+        - type: ctl
+          key: ruleRemoveById
+          value: "930120"
+      chain: []
+      tags: []
+tags: []

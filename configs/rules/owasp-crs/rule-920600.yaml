@@ -1,0 +1,25 @@
+id: "920600"
+msg: 'Illegal Accept header: charset parameter'
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@rx'
+      variable: REQUEST_HEADERS:Accept
+      value: ^(?:(?:*|[^"(),/:;<=>?![x5c]{}]+)/(?:*|[^"(),/:;<=>?![x5c]{}]+))(?:s*+;s*+(?:(?:charsets*+=s*+(?:"?(?:iso-8859-15?|windows-1252|utf-8)b"?))|(?:(?:c(?:h(?:a(?:r(?:s(?:e[^t"(),/:;<=>?![x5c]{}]|[^e"(),/:;<=>?![x5c]{}])|[^s"(),/:;<=>?![x5c]{}])|[^r"(),/:;<=>?![x5c]{}])|[^a"(),/:;<=>?![x5c]{}])|[^h"(),/:;<=>?![x5c]{}])|[^c"(),/:;<=>?![x5c]{}])[^"(),/:;<=>?![x5c]{}]*(?:)s*+=s*+[^(),/:;<=>?![x5c]{}]+)|;?))*(?:s*+,s*+(?:(?:*|[^"(),/:;<=>?![x5c]{}]+)/(?:*|[^"(),/:;<=>?![x5c]{}]+))(?:s*+;s*+(?:(?:charsets*+=s*+(?:"?(?:iso-8859-15?|windows-1252|utf-8)b"?))|(?:(?:c(?:h(?:a(?:r(?:s(?:e[^t"(),/:;<=>?![x5c]{}]|[^e"(),/:;<=>?![x5c]{}])|[^s"(),/:;<=>?![x5c]{}])|[^r"(),/:;<=>?![x5c]{}])|[^a"(),/:;<=>?![x5c]{}])|[^h"(),/:;<=>?![x5c]{}])|[^c"(),/:;<=>?![x5c]{}])[^"(),/:;<=>?![x5c]{}]*(?:)s*+=s*+[^(),/:;<=>?![x5c]{}]+)|;?))*)*$
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS

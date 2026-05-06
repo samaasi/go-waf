@@ -1,0 +1,48 @@
+id: "9004110"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /lib/exe/ajax.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: POST
+      conditions:
+        - operator: '@streq'
+          variable: REQUEST_METHOD
+          value: POST
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@rx'
+          variable: REQUEST_COOKIES:/S?DW[a-f0-9]+/
+          value: ^[%a-zA-Z0-9_-]+
+          transformations:
+            - t:none
+      actions:
+        - type: setvar
+          key: tx.allowed_request_content_type
+          value: '%{tx.allowed_request_content_type}|application/octet-stream'
+      chain: []
+      tags: []
+tags: []

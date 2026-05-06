@@ -1,0 +1,30 @@
+id: "942190"
+msg: Detects MSSQL code execution and information gathering attempts
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:(?:["'`](?:;?s*?(?:having|select|union)bs*?[^s]|s*?!s*?["'`w])|(?:c(?:onnection_id|urrent_user)|database)s*?([^)]*?|u(?:nion(?:[w(s]*?select| select @)|sers*?([^)]*?)|s(?:chemas*?([^)]*?|elect.*?w?user()|into[s+]+(?:dump|out)files*?["'`]|s*?exec(?:ute)?.*?Wxp_cmdshell|fromW+information_schemaW|exec(?:ute)?s+master.|wiifs*?())
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2

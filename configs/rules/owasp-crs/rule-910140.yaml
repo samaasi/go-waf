@@ -1,0 +1,41 @@
+id: "910140"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rbl'
+      variable: TX:REAL_IP
+      value: dnsbl.httpbl.org
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.httpbl_msg
+      value: '%{tx.0}'
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: org succeeded at tx:checkip
+      conditions:
+        - operator: '@rx'
+          variable: TX:httpbl_msg
+          value: 'RBL lookup of .*?.dnsbl.httpbl.org succeeded at TX:checkip. (.*?): .*'
+          transformations:
+            - t:none
+      actions:
+        - type: setvar
+          key: tx.httpbl_msg
+          value: '%{tx.1}'
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-ip
+    - OWASP_CRS

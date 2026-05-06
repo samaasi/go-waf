@@ -1,0 +1,75 @@
+id: "901200"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.anomaly_score
+      value: "0"
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: "0"
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: "0"
+    - type: setvar
+      key: tx.anomaly_score_pl3
+      value: "0"
+    - type: setvar
+      key: tx.anomaly_score_pl4
+      value: "0"
+    - type: setvar
+      key: tx.sql_injection_score
+      value: "0"
+    - type: setvar
+      key: tx.xss_score
+      value: "0"
+    - type: setvar
+      key: tx.rfi_score
+      value: "0"
+    - type: setvar
+      key: tx.lfi_score
+      value: "0"
+    - type: setvar
+      key: tx.rce_score
+      value: "0"
+    - type: setvar
+      key: tx.php_injection_score
+      value: "0"
+    - type: setvar
+      key: tx.http_violation_score
+      value: "0"
+    - type: setvar
+      key: tx.session_fixation_score
+      value: "0"
+    - type: setvar
+      key: tx.inbound_anomaly_score
+      value: "0"
+    - type: setvar
+      key: tx.outbound_anomaly_score
+      value: "0"
+    - type: setvar
+      key: tx.outbound_anomaly_score_pl1
+      value: "0"
+    - type: setvar
+      key: tx.outbound_anomaly_score_pl2
+      value: "0"
+    - type: setvar
+      key: tx.outbound_anomaly_score_pl3
+      value: "0"
+    - type: setvar
+      key: tx.outbound_anomaly_score_pl4
+      value: "0"
+    - type: setvar
+      key: tx.sql_error_match
+      value: "0"
+chain: []
+tags: []

@@ -1,0 +1,51 @@
+id: "9004130"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /doku.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: index
+      conditions:
+        - operator: '@streq'
+          variable: ARGS:do
+          value: index
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS:do'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveById
+          value: "951240"
+        - type: ctl
+          key: ruleRemoveById
+          value: "953110"
+      chain: []
+      tags: []
+tags: []

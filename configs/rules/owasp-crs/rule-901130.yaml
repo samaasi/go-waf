@@ -1,0 +1,17 @@
+id: "901130"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:sampling_percentage'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.sampling_percentage
+      value: "100"
+chain: []
+tags: []

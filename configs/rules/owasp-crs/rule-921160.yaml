@@ -1,0 +1,34 @@
+id: "921160"
+msg: HTTP Header Injection Attack via payload (CR/LF and header-name detected)
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: originating-ip
+conditions:
+    - operator: '@rx'
+      variable: ARGS_GET_NAMES|ARGS_GET
+      value: '[nr]+(?:s|location|refresh|(?:set-)?cookie|(?:x-)?(?:forwarded-(?:for|host|server)|host|via|remote-ip|remote-addr|originating-IP))s*:'
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:htmlEntityDecode
+        - t:lowercase
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.http_violation_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272/220/33

@@ -1,0 +1,14 @@
+id: "901001"
+msg: ModSecurity Core Rule Set is deployed without configuration! Please copy the crs-setup.conf.example template to crs-setup.conf
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:crs_setup_version'
+      value: "0"
+      transformations: []
+actions: []
+chain: []
+tags: []

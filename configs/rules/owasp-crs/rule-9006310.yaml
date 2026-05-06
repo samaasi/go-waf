@@ -1,0 +1,21 @@
+id: "9006310"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /register/register
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942130;ARGS
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:reg_key
+chain: []
+tags: []

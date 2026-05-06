@@ -1,0 +1,26 @@
+id: "920273"
+msg: Invalid character in request (outside of very strict set)
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@validateByteRange'
+      variable: ARGS|ARGS_NAMES|REQUEST_BODY
+      value: 38,44-46,48-58,61,65-90,95,97-122
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl4
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - OWASP_CRS
+    - capec/1000/210/272
+    - paranoia-level/4

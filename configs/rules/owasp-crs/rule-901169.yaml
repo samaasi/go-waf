@@ -1,0 +1,17 @@
+id: "901169"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:crs_validate_utf8_encoding'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.crs_validate_utf8_encoding
+      value: "0"
+chain: []
+tags: []

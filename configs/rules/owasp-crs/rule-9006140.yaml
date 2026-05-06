@@ -1,0 +1,48 @@
+id: "9006140"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: conversations
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /(?:conversations|threads)/.*.d+/multi-quote$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:quotes
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[0][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[1][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[2][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[3][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[4][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[5][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[6][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[7][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[8][value]
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:insert[9][value]
+chain: []
+tags: []

@@ -1,0 +1,35 @@
+id: "941350"
+msg: UTF-7 Encoding IE XSS - Attack Detected
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: +ADw-.*(?:+AD4-|>)|<.*+AD4-
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:urlDecode
+        - t:htmlEntityDecode
+        - t:jsDecode
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.xss_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-internet-explorer
+    - attack-xss
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242

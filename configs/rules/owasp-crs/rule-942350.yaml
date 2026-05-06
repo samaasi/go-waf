@@ -1,0 +1,30 @@
+id: "942350"
+msg: Detects MySQL UDF injection and other data/structure manipulation attempts
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: function
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:(?:;s*?(?:(?:(?:trunc|cre|upd)at|renam)e|(?:inser|selec)t|de(?:lete|sc)|alter|load)bs*?[[(]?w{2,}|creates+functions+.+s+returns))
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2

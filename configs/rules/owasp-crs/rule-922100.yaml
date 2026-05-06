@@ -1,0 +1,40 @@
+id: "922100"
+msg: Multipart content type global _charset_ definition is not allowed by policy
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@eq'
+      variable: '&MULTIPART_PART_HEADERS:_charset_'
+      value: "0"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '!@within'
+          variable: ARGS:_charset_
+          value: '|%{tx.allowed_request_content_type_charset}|'
+          transformations:
+            - t:lowercase
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-multipart-header
+    - OWASP_CRS
+    - capec/1000/255/153
+    - paranoia-level/1

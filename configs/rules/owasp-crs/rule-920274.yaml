@@ -1,0 +1,26 @@
+id: "920274"
+msg: Invalid character in request headers (outside of very strict set)
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@validateByteRange'
+      variable: REQUEST_HEADERS|!REQUEST_HEADERS:User-Agent|!REQUEST_HEADERS:Referer|!REQUEST_HEADERS:Cookie|!REQUEST_HEADERS:Sec-Fetch-User
+      value: 32,34,38,42-59,61,65-90,95,97-122
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl4
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - OWASP_CRS
+    - capec/1000/210/272
+    - paranoia-level/4

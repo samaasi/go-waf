@@ -1,0 +1,31 @@
+id: "942110"
+msg: 'SQL Injection Attack: Common Injection Testing Detected'
+severity: 10
+phase: 2
+action: block
+pre_filter_keyword: s
+conditions:
+    - operator: '@rx'
+      variable: ARGS_NAMES|ARGS|XML:/*
+      value: (?:^s*["'`;]+|["'`]+s*$)
+      transformations:
+        - t:none
+        - t:utf8toUnicode
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.warning_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.warning_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

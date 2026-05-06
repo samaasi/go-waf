@@ -1,0 +1,33 @@
+id: "942140"
+msg: 'SQL Injection Attack: Common DB Names Detected'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:b(?:(?:m(?:s(?:ys(?:ac(?:cess(?:objects|storage|xml)|es)|(?:relationship|object|querie)s|modules2?)|db)|aster..sysdatabases|ysql.db)|pg_(?:catalog|toast)|information_schema|northwind|tempdb)b|s(?:(?:ys(?:.database_name|aux)|qlite(?:_temp)?_master)b|chema(?:_nameb|W*())|d(?:atabas|b_nam)eW*())
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2

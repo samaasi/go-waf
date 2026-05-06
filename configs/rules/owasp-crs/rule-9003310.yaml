@@ -1,0 +1,30 @@
+id: "9003310"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /index.php/apps/files_texteditor/
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /index.php/apps/files_texteditor/
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:filecontents
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 921110-921160;ARGS:filecontents
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 932150;ARGS:filename
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920370-920390;ARGS:filecontents
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920370-920390;ARGS_COMBINED_SIZE
+chain: []
+tags: []

@@ -1,0 +1,14 @@
+id: "900003"
+msg: Admin role detected in JSON body
+severity: 5
+phase: 2
+action: block
+pre_filter_keyword: admin
+conditions:
+    - operator: '@rx'
+      variable: ARGS:json.user.role
+      value: ^admin$
+      transformations: []
+actions: []
+chain: []
+tags: []

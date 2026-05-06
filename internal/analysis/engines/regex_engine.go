@@ -90,6 +90,33 @@ func NewRegexEngineWithPath(path string) *RegexEngine {
 func (re *RegexEngine) ID() string   { return "regex-signatures" }
 func (re *RegexEngine) Name() string { return "Regex Signature Engine" }
 
+func (re *RegexEngine) GetRules() []domain.RuleMetadata {
+	var all []*RegexRule
+	all = append(all, re.pathRules...)
+	all = append(all, re.queryRules...)
+	all = append(all, re.bodyRules...)
+	for _, rules := range re.headerRules {
+		all = append(all, rules...)
+	}
+	all = append(all, re.anyRules...)
+
+	res := make([]domain.RuleMetadata, len(all))
+	for i, r := range all {
+		res[i] = domain.RuleMetadata{
+			ID:       r.id,
+			Name:     r.name,
+			Severity: r.severity,
+			Enabled:  true,
+			EngineID: re.ID(),
+		}
+	}
+	return res
+}
+
+func (re *RegexEngine) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
 func (re *RegexEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
 

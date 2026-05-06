@@ -1,0 +1,15 @@
+id: "901500"
+msg: Executing paranoia level configured is lower than the paranoia level itself. This is illegal. Blocking request. Aborting
+severity: 10
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@lt'
+      variable: TX:executing_paranoia_level
+      value: '%{tx.paranoia_level}'
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags: []

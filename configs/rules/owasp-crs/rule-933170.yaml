@@ -1,0 +1,31 @@
+id: "933170"
+msg: 'PHP Injection Attack: Serialized Object Injection'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: :"
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_HEADERS|ARGS_NAMES|ARGS|XML:/*
+      value: '[oOcC]:d+:".+?":d+:{.*}'
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.php_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-php
+    - platform-multi
+    - attack-injection-php
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242

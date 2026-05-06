@@ -1,0 +1,48 @@
+id: "9002410"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-admin/setup-config.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: "2"
+      conditions:
+        - operator: '@streq'
+          variable: ARGS:step
+          value: "2"
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS:step'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:pwd
+      chain: []
+      tags: []
+tags: []

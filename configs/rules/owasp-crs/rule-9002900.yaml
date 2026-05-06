@@ -1,0 +1,36 @@
+id: "9002900"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /wp-admin/load-
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /wp-admin/load-(?:scripts|styles).php$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: "921180"
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920273;ARGS_NAMES:load[]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942432;ARGS_NAMES:load[]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942360;ARGS:load[]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942430;ARGS:load[]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942431;ARGS:load[]
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942432;ARGS:load[]
+chain: []
+tags: []

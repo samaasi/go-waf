@@ -1,0 +1,17 @@
+id: "9001212"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /contact
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /user/[0-9]+/contact$
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:message[0][value]
+chain: []
+tags: []

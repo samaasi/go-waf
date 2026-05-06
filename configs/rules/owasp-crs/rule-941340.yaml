@@ -1,0 +1,32 @@
+id: "941340"
+msg: IE XSS Filters - Attack Detected
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: in
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|!REQUEST_COOKIES:/_pk_ref/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i)["'][ ]*(?:[^a-z0-9~_:' ]|in).+?[.].+?=
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:htmlEntityDecode
+        - t:compressWhitespace
+actions:
+    - type: setvar
+      key: tx.xss_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-xss
+    - OWASP_CRS
+    - capec/1000/152/242
+    - PCI/6.5.1
+    - paranoia-level/2

@@ -1,0 +1,18 @@
+id: "9003160"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: apps/gallery/thumbnails
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /index.php/(?:apps/gallery/thumbnails|logout$)
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 941120;ARGS:requesttoken
+chain: []
+tags: []

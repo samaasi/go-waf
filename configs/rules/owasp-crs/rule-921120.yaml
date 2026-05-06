@@ -1,0 +1,33 @@
+id: "921120"
+msg: HTTP Response Splitting Attack
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: set-cookie
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: '[rn]W*?(?:content-(?:type|length)|set-cookie|location):s*w'
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:lowercase
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.http_violation_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272/220/34

@@ -1,0 +1,32 @@
+id: "952110"
+msg: Java Errors
+severity: 10
+phase: 4
+action: block
+pre_filter_keyword: java.lang.NullPointerException
+conditions:
+    - operator: '@pm'
+      variable: RESPONSE_BODY
+      value: '[java.lang. class java.lang. java.lang.NullPointerException java.rmi.ServerException at java.lang. onclick="toggle(''full exception chain stacktrace'')" at org.apache.catalina at org.apache.coyote. at org.apache.tomcat. at org.apache.jasper.'
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.outbound_anomaly_score_pl1
+      value: +%{tx.error_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.error_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-java
+    - platform-multi
+    - attack-disclosure
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/118/116
+    - PCI/6.5.6

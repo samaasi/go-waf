@@ -1,0 +1,34 @@
+id: "934100"
+msg: Node.js Injection Attack
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?:(?:_(?:$$ND_FUNC$$_|_js_function)|(?:news+Function|beval)s*(|Strings*.s*fromCharCode|functions*(s*)s*{|this.constructor)|module.exportss*=)
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:base64Decode
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.rce_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-javascript
+    - platform-multi
+    - attack-rce
+    - attack-injection-nodejs
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242

@@ -1,0 +1,17 @@
+id: "901140"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:critical_anomaly_score'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.critical_anomaly_score
+      value: "5"
+chain: []
+tags: []

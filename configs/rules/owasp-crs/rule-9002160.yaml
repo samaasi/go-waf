@@ -1,0 +1,105 @@
+id: "9002160"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: "on"
+conditions:
+    - operator: '@streq'
+      variable: ARGS:wp_customize
+      value: "on"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: customize_save
+      conditions:
+        - operator: '@rx'
+          variable: ARGS:action
+          value: ^(?:|customize_save|update-widget)$
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS:action'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942200;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942260;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942300;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942330;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942340;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942370;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942460;ARGS:customized
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 920230;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 941320;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942180;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942200;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942260;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942330;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942340;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942370;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942430;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942431;ARGS:partials
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 942460;ARGS:partials
+      chain: []
+      tags: []
+tags: []

@@ -1,0 +1,18 @@
+id: "901321"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.real_ip
+      value: '%{remote_addr}'
+chain: []
+tags: []

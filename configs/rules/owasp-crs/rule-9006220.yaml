@@ -1,0 +1,30 @@
+id: "9006220"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ttachments/upload
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /(?:account/avatar|attachments/upload)$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: "200003"
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942220;ARGS:flowChunkSize
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942440;ARGS:flowIdentifier
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942440;ARGS:flowFilename
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942440;ARGS:flowRelativePath
+chain: []
+tags: []

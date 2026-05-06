@@ -1,0 +1,50 @@
+id: "912120"
+msg: Denial of Service (DoS) attack identified from %{tx.real_ip} (%{tx.dos_block_counter} hits since last alert)
+severity: 10
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: IP:DOS_BLOCK
+      value: "1"
+      transformations: []
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&IP:DOS_BLOCK_FLAG'
+          value: "0"
+          transformations: []
+      actions:
+        - type: setvar
+          key: ip.dos_block_counter
+          value: "+1"
+        - type: setvar
+          key: ip.dos_block_flag
+          value: "1"
+        - type: setvar
+          key: tx.dos_block_counter
+          value: '%{ip.dos_block_counter}'
+        - type: setvar
+          key: ip.dos_block_counter
+          value: "0"
+        - type: expirevar
+          key: ip.dos_block_flag
+          value: "60"
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - paranoia-level/1
+    - attack-dos
+    - OWASP_CRS
+    - capec/1000/210/227/469

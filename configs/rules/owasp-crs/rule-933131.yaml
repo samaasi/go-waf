@@ -1,0 +1,33 @@
+id: "933131"
+msg: 'PHP Injection Attack: Variables Found'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: x_forwarded_fo
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?:HTTP_(?:ACCEPT(?:_(?:ENCODING|LANGUAGE|CHARSET))?|(?:X_FORWARDED_FO|REFERE)R|(?:USER_AGEN|HOS)T|CONNECTION|KEEP_ALIVE)|PATH_(?:TRANSLATED|INFO)|ORIG_PATH_INFO|QUERY_STRING|REQUEST_URI|AUTH_TYPE)
+      transformations:
+        - t:none
+        - t:normalisePath
+        - t:urlDecodeUni
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.php_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl3
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-php
+    - platform-multi
+    - attack-injection-php
+    - OWASP_CRS
+    - capec/1000/152/242
+    - paranoia-level/3

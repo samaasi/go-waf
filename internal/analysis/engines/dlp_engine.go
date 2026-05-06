@@ -22,9 +22,12 @@ type DlpRule struct {
 var builtInRules = []DlpRule{
 	{ID: "DLP-PAN", Pattern: `\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11})\b`, Description: "Credit Card Number (PAN)", IsRegex: true},
 	{ID: "DLP-SSN", Pattern: `\b\d{3}-\d{2}-\d{4}\b`, Description: "Social Security Number (SSN)", IsRegex: true},
-	{ID: "DLP-KEY", Pattern: `(?i)(?:api_key|secret_key|access_token|private_key)["']?\s*[:=]\s*["']?([a-zA-Z0-9_\-\.]{16,})`, Description: "API Key or Secret", IsRegex: true},
+	{ID: "DLP-AWS", Pattern: `\b(AKIA[0-9A-Z]{16})\b`, Description: "AWS Access Key ID", IsRegex: true},
+	{ID: "DLP-AWS-SECRET", Pattern: `\b([a-zA-Z0-9+/]{40})\b`, Description: "AWS Secret Access Key (Potential)", IsRegex: true},
+	{ID: "DLP-JWT", Pattern: `\beyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*\b`, Description: "JWT Token", IsRegex: true},
+	{ID: "DLP-STRIPE", Pattern: `\b(sk_live_[0-9a-zA-Z]{24})\b`, Description: "Stripe Live Secret Key", IsRegex: true},
+	{ID: "DLP-IBAN", Pattern: `\b[A-Z]{2}\d{2}[A-Z\d]{4}\d{7}([A-Z\d]?){0,16}\b`, Description: "IBAN", IsRegex: true},
 	{ID: "DLP-EMAIL", Pattern: `[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`, Description: "Email Address", IsRegex: true},
-	{ID: "DLP-PHONE", Pattern: `\b(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b`, Description: "Phone Number", IsRegex: true},
 }
 
 // DlpEngine specializes in detecting sensitive data in outbound responses.
@@ -125,21 +128,54 @@ func (e *DlpEngine) InspectResponse(body []byte) []*domain.SecurityEvent {
 		}
 	}
 
-	// 2. Regex Matching
+	// 2. Regex Matching with Validation
 	for _, r := range e.regexRules {
-		if r.re.Match(body) {
-			match := r.re.FindString(bodyStr)
+		matches := r.re.FindAllString(bodyStr, -1)
+		for _, match := range matches {
+			// Specific validation for PAN
+			if r.ID == "DLP-PAN" && !isLuhnValid(match) {
+				continue
+			}
+
 			events = append(events, &domain.SecurityEvent{
 				RuleID:      r.ID,
 				RuleName:    "Sensitive Pattern Exposure",
 				Severity:    domain.SeverityCritical,
 				Message:     "Found sensitive pattern: " + r.Description,
-				MatchedData: maskString(match), // Anonymize for telemetry
+				MatchedData: maskString(match),
 			})
 		}
 	}
 
 	return events
+}
+
+func isLuhnValid(s string) bool {
+	// Remove non-digits
+	var digits []int
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			digits = append(digits, int(r-'0'))
+		}
+	}
+	if len(digits) < 13 {
+		return false
+	}
+
+	sum := 0
+	shouldDouble := false
+	for i := len(digits) - 1; i >= 0; i-- {
+		n := digits[i]
+		if shouldDouble {
+			n *= 2
+			if n > 9 {
+				n -= 9
+			}
+		}
+		sum += n
+		shouldDouble = !shouldDouble
+	}
+	return sum%10 == 0
 }
 
 // Mask replaces sensitive data in the body with asterisks.

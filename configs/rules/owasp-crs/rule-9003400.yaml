@@ -1,0 +1,21 @@
+id: "9003400"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /index.php/login
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /index.php/login
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 941100;ARGS:requesttoken
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:password
+chain: []
+tags: []

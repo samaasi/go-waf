@@ -1,0 +1,14 @@
+id: "101"
+msg: Reputation block
+severity: 10
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@gt'
+      variable: IP:event_count
+      value: "1"
+      transformations: []
+actions: []
+chain: []
+tags: []

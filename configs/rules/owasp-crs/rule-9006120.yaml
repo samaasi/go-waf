@@ -1,0 +1,36 @@
+id: "9006120"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: conversations/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /(?:conversations/add(?:-preview)?|conversations/messages/d+/edit|posts/d+/(?:edit|preview)|(?:conversations|threads)/.*.d+/(?:add-reply|reply-preview)|forums/.*/(?:post-thread|thread-preview))$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:title
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:message
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:message_html
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942200;ARGS:attachment_hash_combined
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942260;ARGS:attachment_hash_combined
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942340;ARGS:attachment_hash_combined
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942370;ARGS:attachment_hash_combined
+chain: []
+tags: []

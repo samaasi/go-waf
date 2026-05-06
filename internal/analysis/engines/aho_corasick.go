@@ -53,6 +53,26 @@ func (e *FastMatchEngine) Name() string              { return "Aho-Corasick Scan
 func (e *FastMatchEngine) Tags() []string            { return []string{"fast", "pre-filter", "dfa"} }
 func (e *FastMatchEngine) Severity() domain.Severity { return domain.SeverityMedium }
 
+func (e *FastMatchEngine) GetRules() []domain.RuleMetadata {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	res := make([]domain.RuleMetadata, len(e.rules))
+	for i, r := range e.rules {
+		res[i] = domain.RuleMetadata{
+			ID:       "AC-" + r.Pattern,
+			Name:     r.Description,
+			Severity: r.Severity,
+			Enabled:  true,
+			EngineID: e.ID(),
+		}
+	}
+	return res
+}
+
+func (e *FastMatchEngine) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
 func (e *FastMatchEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
 	e.mu.RLock()
 	matcher := e.matcher

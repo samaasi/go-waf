@@ -1,0 +1,23 @@
+id: "9001160"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942440;ARGS:form_build_id
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942450;ARGS:form_token
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942450;ARGS:form_build_id
+chain: []
+tags: []

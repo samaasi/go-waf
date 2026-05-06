@@ -1,0 +1,18 @@
+id: "949062"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@ge'
+      variable: TX:PARANOIA_LEVEL
+      value: "3"
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.anomaly_score
+      value: +%{tx.anomaly_score_pl3}
+chain: []
+tags: []

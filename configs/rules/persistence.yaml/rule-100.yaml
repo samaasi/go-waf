@@ -1,0 +1,17 @@
+id: "100"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: /trigger
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /trigger
+      transformations: []
+actions:
+    - type: setvar
+      key: IP.event_count
+      value: "+1"
+chain: []
+tags: []

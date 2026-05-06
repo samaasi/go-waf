@@ -1,0 +1,15 @@
+id: "9003001"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:crs_exclusions_nextcloud|TX:crs_exclusions_nextcloud'
+      value: "0"
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags: []

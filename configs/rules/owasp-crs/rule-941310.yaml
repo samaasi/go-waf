@@ -1,0 +1,36 @@
+id: "941310"
+msg: US-ASCII Malformed Encoding XSS Filter - Attack Detected
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: xbc
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: xbc[^xbe>]*[xbe>]|<[^xbe]*xbe
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:lowercase
+        - t:urlDecode
+        - t:htmlEntityDecode
+        - t:jsDecode
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.xss_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-tomcat
+    - attack-xss
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242

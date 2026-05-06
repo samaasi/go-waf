@@ -1,0 +1,26 @@
+id: "920350"
+msg: Host header is a numeric IP address
+severity: 10
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_HEADERS:Host
+      value: ^[d.:]+$
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.warning_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272
+    - PCI/6.5.10

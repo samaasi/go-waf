@@ -27,6 +27,17 @@ func NewGeoIPEngine(cfg *config.SecurityConfig, provider domain.GeoIPProvider) *
 func (e *GeoIPEngine) ID() string   { return "geoip-intelligence" }
 func (e *GeoIPEngine) Name() string { return "GeoIP Intelligence Engine" }
 
+func (e *GeoIPEngine) GetRules() []domain.RuleMetadata {
+	return []domain.RuleMetadata{
+		{ID: "BOT-001", Name: "Bot/DataCenter Detection", Severity: domain.SeverityMedium, Enabled: e.cfg.EnableBotShield, EngineID: e.ID()},
+		{ID: "GEO-101", Name: "Country Level Blocking", Severity: domain.SeverityHigh, Enabled: len(e.cfg.BlockCountries) > 0, EngineID: e.ID()},
+	}
+}
+
+func (e *GeoIPEngine) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
 func (e *GeoIPEngine) LoadRules() error {
 	// GeoIP rules are loaded from the MaxMind database and config, no separate rule file needed.
 	return nil

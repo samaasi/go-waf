@@ -1,0 +1,30 @@
+id: "980120"
+msg: 'Inbound Anomaly Score (Total Inbound Score: %{TX.INBOUND_ANOMALY_SCORE} - SQLI=%{tx.sql_injection_score}'
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@lt'
+      variable: TX:INBOUND_ANOMALY_SCORE
+      value: '%{tx.inbound_anomaly_score_threshold}'
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@gt'
+          variable: TX:MONITOR_ANOMALY_SCORE
+          value: "1"
+          transformations: []
+      actions: []
+      chain: []
+      tags: []
+tags:
+    - event-correlation

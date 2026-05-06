@@ -1,0 +1,18 @@
+id: "9006960"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: options/update
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /admin.php?options/update
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:options[boardInactiveMessage]
+chain: []
+tags: []

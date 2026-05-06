@@ -1,0 +1,17 @@
+id: "901100"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:inbound_anomaly_score_threshold'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.inbound_anomaly_score_threshold
+      value: "5"
+chain: []
+tags: []

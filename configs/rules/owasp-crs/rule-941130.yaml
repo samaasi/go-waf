@@ -1,0 +1,37 @@
+id: "941130"
+msg: 'XSS Filter - Category 3: Attribute Vector'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: data:text/html
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_HEADERS:User-Agent|ARGS_NAMES|ARGS|XML:/*
+      value: (?i)[sS](?:!ENTITYs+(?:S+|%s+S+)s+(?:PUBLIC|SYSTEM)|x(?:link:href|html|mlns)|data:text/html|patternb.*?=|formaction|@import|;base64)b
+      transformations:
+        - t:none
+        - t:utf8toUnicode
+        - t:urlDecodeUni
+        - t:htmlEntityDecode
+        - t:jsDecode
+        - t:cssDecode
+        - t:removeNulls
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.xss_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-xss
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242

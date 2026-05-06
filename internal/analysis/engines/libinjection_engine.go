@@ -28,6 +28,17 @@ func (e *LibinjectionEngine) Name() string              { return "Libinjection S
 func (e *LibinjectionEngine) Tags() []string            { return []string{"semantic", "sqli", "xss"} }
 func (e *LibinjectionEngine) Severity() domain.Severity { return domain.SeverityHigh }
 
+func (e *LibinjectionEngine) GetRules() []domain.RuleMetadata {
+	return []domain.RuleMetadata{
+		{ID: "LIBINJ-SQLI", Name: "Semantic SQL Injection Detection", Severity: domain.SeverityCritical, Enabled: true, EngineID: e.ID()},
+		{ID: "LIBINJ-XSS", Name: "Semantic XSS Detection", Severity: domain.SeverityHigh, Enabled: true, EngineID: e.ID()},
+	}
+}
+
+func (e *LibinjectionEngine) ToggleRule(id string, enabled bool) bool {
+	return false
+}
+
 func (e *LibinjectionEngine) Evaluate(ctx context.Context, req *domain.WafRequest, phase int) []*domain.SecurityEvent {
 	var events []*domain.SecurityEvent
 

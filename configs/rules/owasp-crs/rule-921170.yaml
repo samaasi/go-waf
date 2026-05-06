@@ -1,0 +1,23 @@
+id: "921170"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: ARGS
+      value: .
+      transformations: []
+actions:
+    - type: setvar
+      key: TX.paramcounter_%{MATCHED_VAR_NAME}
+      value: "+1"
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - OWASP_CRS
+    - capec/1000/152/137/15/460

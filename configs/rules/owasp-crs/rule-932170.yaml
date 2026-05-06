@@ -1,0 +1,33 @@
+id: "932170"
+msg: 'Remote Command Execution: Shellshock (CVE-2014-6271)'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: s
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_HEADERS|REQUEST_LINE
+      value: ^(s*)s+{
+      transformations:
+        - t:none
+        - t:urlDecode
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.rce_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-shell
+    - platform-unix
+    - attack-rce
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/248/88
+    - PCI/6.5.2

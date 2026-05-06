@@ -1,0 +1,61 @@
+id: "910100"
+msg: Client IP is from a HIGH Risk Country Location
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@rx'
+      variable: TX:HIGH_RISK_COUNTRY_CODES
+      value: ^$
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@geoLookup'
+          variable: TX:REAL_IP
+          value: ""
+          transformations: []
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@within'
+          variable: GEO:COUNTRY_CODE
+          value: '%{tx.high_risk_country_codes}'
+          transformations: []
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+        - type: setvar
+          key: ip.reput_block_flag
+          value: "1"
+        - type: setvar
+          key: ip.reput_block_reason
+          value: '%{rule.msg}'
+        - type: expirevar
+          key: ip.reput_block_flag
+          value: '%{tx.reput_block_duration}'
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-ip
+    - paranoia-level/1
+    - OWASP_CRS

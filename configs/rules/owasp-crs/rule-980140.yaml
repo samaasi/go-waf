@@ -1,0 +1,16 @@
+id: "980140"
+msg: 'Outbound Anomaly Score Exceeded (score %{TX.OUTBOUND_ANOMALY_SCORE}): individual paranoia level scores: %{TX.OUTBOUND_ANOMALY_SCORE_PL1}'
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@ge'
+      variable: TX:OUTBOUND_ANOMALY_SCORE
+      value: '%{tx.outbound_anomaly_score_threshold}'
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags:
+    - event-correlation

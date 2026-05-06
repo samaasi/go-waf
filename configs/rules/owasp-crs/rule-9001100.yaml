@@ -1,0 +1,20 @@
+id: "9001100"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942450;REQUEST_COOKIES_NAMES
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942450;REQUEST_COOKIES
+chain: []
+tags: []

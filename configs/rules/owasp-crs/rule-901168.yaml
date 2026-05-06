@@ -1,0 +1,17 @@
+id: "901168"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:allowed_request_content_type_charset'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.allowed_request_content_type_charset
+      value: utf-8|iso-8859-1|iso-8859-15|windows-1252
+chain: []
+tags: []

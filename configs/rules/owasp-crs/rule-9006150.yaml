@@ -1,0 +1,18 @@
+id: "9006150"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /threads/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /threads/.*.d+/delete$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942130;ARGS:starter_alert_reason
+chain: []
+tags: []

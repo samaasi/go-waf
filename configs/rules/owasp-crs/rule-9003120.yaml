@@ -1,0 +1,27 @@
+id: "9003120"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /remote.php/dav/files/
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /remote.php/dav/files/
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveById
+      value: 930100-930110
+    - type: ctl
+      key: ruleRemoveById
+      value: 951000-951999
+    - type: ctl
+      key: ruleRemoveById
+      value: 953100-953130
+    - type: ctl
+      key: ruleRemoveById
+      value: "920440"
+chain: []
+tags: []

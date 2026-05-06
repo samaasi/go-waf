@@ -1,0 +1,20 @@
+id: "901318"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_HEADERS:User-Agent
+      value: ^.*$
+      transformations:
+        - t:none
+        - t:sha1
+        - t:hexEncode
+actions:
+    - type: setvar
+      key: tx.ua_hash
+      value: '%{MATCHED_VAR}'
+chain: []
+tags: []

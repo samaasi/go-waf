@@ -1,0 +1,18 @@
+id: "9006130"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /posts/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /posts/d+/quote$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:quoteHtml
+chain: []
+tags: []

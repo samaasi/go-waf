@@ -1,0 +1,18 @@
+id: "9006330"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /lost-password/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /lost-password/.*.d+/confirm$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:c
+chain: []
+tags: []

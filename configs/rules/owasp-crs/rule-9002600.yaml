@@ -1,0 +1,66 @@
+id: "9002600"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920230;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931130;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 932150;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 941100;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942130;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942200;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942260;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942431;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942440;ARGS:_wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920230;ARGS:wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 931130;ARGS:wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 932150;ARGS:wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 941100;ARGS:wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942130;ARGS:wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942200;ARGS:wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942260;ARGS:wp_http_referer
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942431;ARGS:wp_http_referer
+chain: []
+tags: []

@@ -1,0 +1,30 @@
+id: "942460"
+msg: Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters
+severity: 10
+phase: 2
+action: block
+pre_filter_keyword: w
+conditions:
+    - operator: '@rx'
+      variable: ARGS
+      value: W{4}
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.warning_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl3
+      value: +%{tx.warning_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/3

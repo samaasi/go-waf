@@ -1,0 +1,30 @@
+id: "942260"
+msg: Detects basic SQL authentication bypass attempts 2/3
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:["'`]s*?(?:(?:n(?:and|ot)|(?:x?x)?or|between||||and|div|&&)s+[sw]+=s*?w+s*?havings+|like(?:s+[sw]+=s*?w+s*?havings+|W*?["'`d])|[^?ws=.,;)(]++s*?[(@"'`]*?s*?w+W+w|*s*?w+W+["'`])|(?:unions*?(?:distinct|[(!@]*?|all)?s*?[([]*?s*?select|selects+?[[]()sw.,"'`-]+from)s+|ws+likes+["'`]|find_in_sets*?(|likes*?["'`]%)
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

@@ -1,0 +1,47 @@
+id: "943120"
+msg: 'Possible Session Fixation Attack: SessionID Parameter Name with No Referer'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: weblogicsession
+conditions:
+    - operator: '@rx'
+      variable: ARGS
+      value: ^(?:jsessionid|aspsessionid|asp.net_sessionid|phpsession|phpsessid|weblogicsession|session_id|session-id|cfid|cftoken|cfsid|jservsession|jwsession)$
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:lowercase
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&REQUEST_HEADERS:Referer'
+          value: "0"
+          transformations: []
+      actions:
+        - type: ctl
+          key: auditLogParts
+          value: +E
+        - type: setvar
+          key: tx.session_fixation_score
+          value: +%{tx.critical_anomaly_score}
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-fixation
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/225/21/593/61

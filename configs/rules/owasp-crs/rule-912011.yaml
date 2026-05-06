@@ -1,0 +1,14 @@
+id: "912011"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@lt'
+      variable: TX:EXECUTING_PARANOIA_LEVEL
+      value: "1"
+      transformations: []
+actions: []
+chain: []
+tags: []

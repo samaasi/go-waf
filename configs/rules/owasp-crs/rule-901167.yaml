@@ -1,0 +1,17 @@
+id: "901167"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:enforce_bodyproc_urlencoded'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.enforce_bodyproc_urlencoded
+      value: "0"
+chain: []
+tags: []

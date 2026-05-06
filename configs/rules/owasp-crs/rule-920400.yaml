@@ -1,0 +1,54 @@
+id: "920400"
+msg: Uploaded file size too large
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:MAX_FILE_SIZE'
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: multipart/form-data
+      conditions:
+        - operator: '@rx'
+          variable: REQUEST_HEADERS:Content-Type
+          value: ^(?i)multipart/form-data
+          transformations: []
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@gt'
+          variable: REQUEST_HEADERS:Content-Length
+          value: '%{tx.max_file_size}'
+          transformations:
+            - t:none
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272

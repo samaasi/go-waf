@@ -1,0 +1,20 @@
+id: "910120"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: IP:PREVIOUS_RBL_CHECK
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-ip
+    - OWASP_CRS

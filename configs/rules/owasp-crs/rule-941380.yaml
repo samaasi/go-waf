@@ -1,0 +1,30 @@
+id: "941380"
+msg: AngularJS client side template injection detected
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: '{{'
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: '{{.*?}}'
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.xss_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - attack-xss
+    - OWASP_CRS
+    - capec/1000/152/242/63
+    - paranoia-level/2

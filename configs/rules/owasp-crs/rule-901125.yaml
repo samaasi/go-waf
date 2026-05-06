@@ -1,0 +1,17 @@
+id: "901125"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:executing_paranoia_level'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.executing_paranoia_level
+      value: '%{TX.PARANOIA_LEVEL}'
+chain: []
+tags: []

@@ -1,0 +1,30 @@
+id: "942210"
+msg: Detects chained SQL injection attempts 1/2
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:(?:(?:n(?:and|ot)|(?:x?x)?or|between||||like|and|div|&&)[s(]+w+[s)]*?[!=+]+[sd]*?["'`=()]|d(?:s*?(?:between|like|x?or|and|div)s*?d+s*?[-+]|s+groups+by.+()|/w+;?s+(?:between|having|select|like|x?or|and|div)W|--s*?(?:(?:insert|update)s*?w{2,}|alter|drop)|#s*?(?:(?:insert|update)s*?w{2,}|alter|drop)|;s*?(?:(?:insert|update)s*?w{2,}|alter|drop)|@.+=s*?(s*?select|[^w]SETs*?@w+))
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

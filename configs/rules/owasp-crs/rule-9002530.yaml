@@ -1,0 +1,87 @@
+id: "9002530"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-admin/user-edit.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: update
+      conditions:
+        - operator: '@streq'
+          variable: ARGS:action
+          value: update
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS:action'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:url
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:url
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:facebook
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:instagram
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:linkedin
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:myspace
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:pinterest
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:soundcloud
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:tumblr
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:youtube
+        - type: ctl
+          key: ruleRemoveTargetById
+          value: 931130;ARGS:wikipedia
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:pass1
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:pass1-text
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:pass2
+      chain: []
+      tags: []
+tags: []

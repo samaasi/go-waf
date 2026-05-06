@@ -1,0 +1,18 @@
+id: "9006315"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /account-confirmation/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /account-confirmation/.*.d+/email$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:c
+chain: []
+tags: []

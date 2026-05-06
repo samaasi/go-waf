@@ -1,0 +1,33 @@
+id: "9003100"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /remote.php/webdav
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /remote.php/webdav
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveByTag
+      value: attack-injection-php
+    - type: ctl
+      key: ruleRemoveById
+      value: 941000-942999
+    - type: ctl
+      key: ruleRemoveById
+      value: 951000-951999
+    - type: ctl
+      key: ruleRemoveById
+      value: 953100-953130
+    - type: ctl
+      key: ruleRemoveById
+      value: "920420"
+    - type: ctl
+      key: ruleRemoveById
+      value: "920440"
+chain: []
+tags: []

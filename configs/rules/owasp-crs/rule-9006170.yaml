@@ -1,0 +1,21 @@
+id: "9006170"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: members/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /(?:members/.*.d+|posts/d+)/warn$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:conversation_message
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:notes
+chain: []
+tags: []

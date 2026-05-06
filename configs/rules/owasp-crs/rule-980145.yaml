@@ -1,0 +1,27 @@
+id: "980145"
+msg: ""
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.executing_anomaly_score
+      value: '%{tx.outbound_anomaly_score_pl1}'
+    - type: setvar
+      key: tx.executing_anomaly_score
+      value: +%{tx.outbound_anomaly_score_pl2}
+    - type: setvar
+      key: tx.executing_anomaly_score
+      value: +%{tx.outbound_anomaly_score_pl3}
+    - type: setvar
+      key: tx.executing_anomaly_score
+      value: +%{tx.outbound_anomaly_score_pl4}
+chain: []
+tags: []

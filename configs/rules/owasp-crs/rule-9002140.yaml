@@ -1,0 +1,21 @@
+id: "9002140"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: /wp-json/wp/v
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /wp-json/wp/v[0-9]+/(?:posts|pages)
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:content
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: OWASP_CRS;ARGS:json.content
+chain: []
+tags: []

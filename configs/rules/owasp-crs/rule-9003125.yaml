@@ -1,0 +1,24 @@
+id: "9003125"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /index.php/core/search
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /index.php/core/search
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetByTag
+      value: attack-injection-php;ARGS:query
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 941000-942999;ARGS:query
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 932000-932999;ARGS:query
+chain: []
+tags: []

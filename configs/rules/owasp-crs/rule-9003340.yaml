@@ -1,0 +1,18 @@
+id: "9003340"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /index.php/apps/notes/
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /index.php/apps/notes/
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveByTag
+      value: attack-injection-php
+chain: []
+tags: []

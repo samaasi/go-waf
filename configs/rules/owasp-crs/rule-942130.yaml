@@ -1,0 +1,31 @@
+id: "942130"
+msg: 'SQL Injection Attack: SQL Tautology Detected'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: ARGS_NAMES|ARGS|XML:/*
+      value: (?i:[s'"`()]*?b([dw]+)b[s'"`()]*?(?:<(?:=(?:[s'"`()]*?(?!b1b)[dw]+|>[s'"`()]*?(?:b1b))|>?[s'"`()]*?(?!b1b)[dw]+)|(?:nots+(?:regexp|like)|iss+not|>=?|!=|^)[s'"`()]*?(?!b1b)[dw]+|(?:(?:soundss+)?like|r(?:egexp|like)|=)[s'"`()]*?(?:b1b)))
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+        - t:replaceComments
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2
+    - paranoia-level/2

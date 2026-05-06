@@ -1,0 +1,21 @@
+id: "9003155"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /index.php/apps/files_trashbin/ajax/preview.php
+conditions:
+    - operator: '@contains'
+      variable: REQUEST_URI
+      value: /index.php/apps/files_trashbin/ajax/preview.php
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 932150;ARGS:file
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942190;ARGS:file
+chain: []
+tags: []

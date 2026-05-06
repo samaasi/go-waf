@@ -1,0 +1,17 @@
+id: "901450"
+msg: 'Sampling: Disable the rule engine based on sampling_percentage %{TX.sampling_percentage} and random number %{TX.sampling_rnd100}'
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@lt'
+      variable: TX:sampling_rnd100
+      value: '%{tx.sampling_percentage}'
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleEngine
+      value: "Off"
+chain: []
+tags: []

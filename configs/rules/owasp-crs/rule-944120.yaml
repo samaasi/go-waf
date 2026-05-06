@@ -1,0 +1,46 @@
+id: "944120"
+msg: 'Remote Command Execution: Java serialization (CVE-2015-4852)'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: serializationfactory
+conditions:
+    - operator: '@rx'
+      variable: ARGS|ARGS_NAMES|REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@*
+      value: (?:clonetransformer|forclosure|instantiatefactory|instantiatetransformer|invokertransformer|prototypeclonefactory|prototypeserializationfactory|whileclosure|getproperty|filewriter|xmldecoder)
+      transformations:
+        - t:none
+        - t:lowercase
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: processbuilder
+      conditions:
+        - operator: '@rx'
+          variable: MATCHED_VARS
+          value: (?:runtime|processbuilder)
+          transformations:
+            - t:none
+            - t:lowercase
+      actions:
+        - type: setvar
+          key: tx.rce_score
+          value: +%{tx.critical_anomaly_score}
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-java
+    - platform-multi
+    - attack-rce
+    - OWASP_CRS
+    - capec/1000/152/248
+    - PCI/6.5.2
+    - paranoia-level/1

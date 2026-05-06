@@ -1,0 +1,36 @@
+id: "9002810"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-admin/options-permalink.php
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920230;ARGS:selection
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920272;ARGS:selection
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942431;ARGS:selection
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920230;ARGS:permalink_structure
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920272;ARGS:permalink_structure
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942431;ARGS:permalink_structure
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 920272;REQUEST_BODY
+chain: []
+tags: []

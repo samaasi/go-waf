@@ -1,0 +1,18 @@
+id: "9003130"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: remote
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /(?:remote|index|public).php/
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.allowed_methods
+      value: '%{tx.allowed_methods} PUT PATCH CHECKOUT COPY DELETE LOCK MERGE MKACTIVITY MKCOL MOVE PROPFIND PROPPATCH UNLOCK REPORT TRACE jsonp'
+chain: []
+tags: []

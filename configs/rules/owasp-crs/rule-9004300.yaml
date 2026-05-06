@@ -1,0 +1,15 @@
+id: "9004300"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@streq'
+      variable: ARGS:do
+      value: admin
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags: []

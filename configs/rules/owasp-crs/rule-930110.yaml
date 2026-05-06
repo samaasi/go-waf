@@ -1,0 +1,32 @@
+id: "930110"
+msg: Path Traversal Attack (/../)
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: /
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI|ARGS|REQUEST_HEADERS|!REQUEST_HEADERS:Referer|XML:/*
+      value: (?:^|[\/])..(?:[\/]|$)
+      transformations:
+        - t:none
+        - t:utf8toUnicode
+        - t:urlDecodeUni
+        - t:removeNulls
+        - t:cmdLine
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.lfi_score
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-lfi
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/255/153/126

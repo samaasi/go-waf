@@ -1,0 +1,30 @@
+id: "9006940"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: /batch-update/action
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /admin.php?(?:threads|users)/batch-update/action$
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942200;ARGS:criteria
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942260;ARGS:criteria
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942330;ARGS:criteria
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942340;ARGS:criteria
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942370;ARGS:criteria
+chain: []
+tags: []

@@ -1,0 +1,39 @@
+id: "920202"
+msg: 'Range: Too many fields for pdf request (6 or more)'
+severity: 10
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_BASENAME
+      value: .pdf
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: bytes=
+      conditions:
+        - operator: '@rx'
+          variable: REQUEST_HEADERS:Range|REQUEST_HEADERS:Request-Range
+          value: ^bytes=(?:(?:d+)?-(?:d+)?s*,?s*){6}
+          transformations: []
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl4
+          value: +%{tx.warning_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - OWASP_CRS
+    - capec/1000/210/272
+    - paranoia-level/4

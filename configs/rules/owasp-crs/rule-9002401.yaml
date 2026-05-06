@@ -1,0 +1,15 @@
+id: "9002401"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@contains'
+      variable: REQUEST_URI
+      value: /wp-admin/
+      transformations:
+        - t:none
+actions: []
+chain: []
+tags: []

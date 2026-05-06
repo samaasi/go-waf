@@ -1,0 +1,14 @@
+id: "901400"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: TX:sampling_percentage
+      value: "100"
+      transformations: []
+actions: []
+chain: []
+tags: []

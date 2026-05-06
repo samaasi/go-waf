@@ -1,0 +1,32 @@
+id: "953110"
+msg: PHP source code leakage
+severity: 10
+phase: 4
+action: block
+pre_filter_keyword: move_uploaded_file
+conditions:
+    - operator: '@rx'
+      variable: RESPONSE_BODY
+      value: (?:b(?:f(?:tp_(?:nb_)?f?(?:ge|pu)t|get(?:s?s|c)|scanf|write|open|read)|gz(?:(?:encod|writ)e|compress|open|read)|s(?:ession_start|candir)|read(?:(?:gz)?file|dir)|move_uploaded_file|(?:proc_|bz)open|call_user_func)|$_(?:(?:pos|ge)t|session))b
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.outbound_anomaly_score_pl1
+      value: +%{tx.error_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.error_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-php
+    - platform-multi
+    - attack-disclosure
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/118/116
+    - PCI/6.5.6

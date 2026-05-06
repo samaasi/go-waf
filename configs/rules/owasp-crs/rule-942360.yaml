@@ -1,0 +1,30 @@
+id: "942360"
+msg: Detects concatenated basic SQL injection and SQLLFI attempts
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: (?i:(?:^[Wd]+s*?(?:(?:alters*(?:a(?:(?:pplications*rol|ggregat)e|s(?:ymmetrics*ke|sembl)y|u(?:thorization|dit)|vailabilitys*group)|c(?:r(?:yptographics*provider|edential)|o(?:l(?:latio|um)|nversio)n|ertificate|luster)|s(?:e(?:rv(?:ice|er)|curity|quence|ssion|arch)|y(?:mmetrics*key|nonym)|togroup|chema)|m(?:a(?:s(?:ters*key|k)|terialized)|e(?:ssages*type|thod)|odule)|l(?:o(?:g(?:files*group|in)|ckdown)|a(?:ngua|r)ge|ibrary)|t(?:(?:abl(?:espac)?|yp)e|r(?:igger|usted)|hreshold|ext)|p(?:a(?:rtition|ckage)|ro(?:cedur|fil)e|ermission)|d(?:i(?:mension|skgroup)|atabase|efault|omain)|r(?:o(?:l(?:lback|e)|ute)|e(?:sourc|mot)e)|f(?:u(?:lltext|nction)|lashback|oreign)|e(?:xte(?:nsion|rnal)|(?:ndpoi|ve)nt)|in(?:dex(?:type)?|memory|stance)|b(?:rokers*priority|ufferpool)|x(?:mls*schema|srobject)|w(?:ork(?:load)?|rapper)|hi(?:erarchy|stogram)|o(?:perator|utline)|(?:nicknam|queu)e|us(?:age|er)|group|java|view)|u(?:nions*(?:(?:distin|sele)ct|all)|pdate)|(?:truncat|renam)e|(?:inser|selec)t|de(?:lete|sc)|load)b|creates+w+)|(?:(?:(?:trunc|cre|upd)at|renam)e|(?:inser|selec)t|de(?:lete|sc)|alter|load)s+(?:group_concat|load_file|char)s?(?|[dW]s+asbs*["'`w]+s*bfrom|[s(]load_files*?(|["'`]s+regexpW|ends*?);))
+      transformations:
+        - t:none
+        - t:urlDecodeUni
+actions:
+    - type: setvar
+      key: tx.sql_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-sqli
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/248/66
+    - PCI/6.5.2

@@ -54,6 +54,14 @@ func (s *AdminService) GetStats() map[string]interface{} {
 func (s *AdminService) IncAllow(method, status string) { s.allowedCount.Add(1) }
 func (s *AdminService) IncBlock(method, status string) { s.blockedCount.Add(1) }
 
+func (s *AdminService) GetRules() []domain.RuleMetadata {
+	return s.pipeline.GetRules()
+}
+
+func (s *AdminService) ToggleRule(id string, enabled bool) bool {
+	return s.pipeline.ToggleRule(id, enabled)
+}
+
 func (s *AdminService) ObserveLatency(method string, duration float64)    {}
 func (s *AdminService) RecordRuleMatch(ruleID, ruleName, severity string) {}
 func (s *AdminService) RecordGeoIP(countryCode string)                    {}

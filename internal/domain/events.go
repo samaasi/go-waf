@@ -29,6 +29,21 @@ func (s Severity) String() string {
 	}
 }
 
+func ParseSeverity(s string) Severity {
+	switch s {
+	case "low":
+		return SeverityLow
+	case "medium":
+		return SeverityMedium
+	case "high":
+		return SeverityHigh
+	case "critical":
+		return SeverityCritical
+	default:
+		return SeverityMedium
+	}
+}
+
 // SecurityEvent represents a specific rule violation.
 type SecurityEvent struct {
 	ID          string    `json:"id"`
@@ -37,20 +52,23 @@ type SecurityEvent struct {
 	RuleName    string    `json:"rule_name"`
 	Severity    Severity  `json:"severity"`
 	Message     string    `json:"message"`
-	MatchedData string    `json:"matched_data"`
-	Timestamp   time.Time `json:"timestamp"`
-	RemoteIP    string    `json:"remote_ip,omitempty"`
-	Path        string    `json:"path,omitempty"`
-	Method      string    `json:"method,omitempty"`
-	UserAgent   string    `json:"user_agent,omitempty"`
+	MatchedData string            `json:"matched_data"`
+	MatchedVars map[string]string `json:"matched_vars,omitempty"`
+	Timestamp   time.Time         `json:"timestamp"`
+	RemoteIP    string            `json:"remote_ip,omitempty"`
+	Path        string            `json:"path,omitempty"`
+	Method      string            `json:"method,omitempty"`
+	UserAgent   string            `json:"user_agent,omitempty"`
 }
 
 // AuditExporter defines the interface for streaming security events.
 type AuditExporter interface {
 	Export(events ...*SecurityEvent)
+	LogTransaction(req *WafRequest, events []*SecurityEvent)
 }
 
 // NoopAuditExporter is the default "opt-out" implementation.
 type NoopAuditExporter struct{}
 
 func (n *NoopAuditExporter) Export(events ...*SecurityEvent) {}
+func (n *NoopAuditExporter) LogTransaction(req *WafRequest, events []*SecurityEvent) {}

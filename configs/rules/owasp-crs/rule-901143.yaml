@@ -1,0 +1,17 @@
+id: "901143"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:notice_anomaly_score'
+      value: "0"
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.notice_anomaly_score
+      value: "2"
+chain: []
+tags: []

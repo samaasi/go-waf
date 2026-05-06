@@ -1,0 +1,30 @@
+id: "944100"
+msg: 'Remote Command Execution: Suspicious Java class detected'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: processbuilder
+conditions:
+    - operator: '@rx'
+      variable: ARGS|ARGS_NAMES|REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|REQUEST_BODY|REQUEST_HEADERS|XML:/*|XML://@*
+      value: java.lang.(?:runtime|processbuilder)
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.rce_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-java
+    - platform-multi
+    - attack-rce
+    - OWASP_CRS
+    - capec/1000/152/137/6
+    - PCI/6.5.2
+    - paranoia-level/1

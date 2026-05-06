@@ -1,0 +1,25 @@
+id: "911100"
+msg: Method is not allowed by policy
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '!@within'
+      variable: REQUEST_METHOD
+      value: '%{tx.allowed_methods}'
+      transformations: []
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-generic
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272/220/274
+    - PCI/12.1

@@ -1,0 +1,40 @@
+id: "9005100"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: get /whm-server-status
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_LINE
+      value: ^GET /whm-server-status(?:/|/?auto)? HTTP/[12].[01]$
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@ipMatch'
+          variable: REMOTE_ADDR
+          value: 127.0.0.1,::1
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveById
+          value: "920280"
+        - type: ctl
+          key: ruleRemoveById
+          value: "920350"
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-apache
+    - attack-generic

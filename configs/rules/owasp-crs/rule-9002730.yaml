@@ -1,0 +1,165 @@
+id: "9002730"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /wp-admin/admin-ajax.php
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: update-widget
+      conditions:
+        - operator: '@rx'
+          variable: ARGS:action
+          value: ^(?:save-widget|update-widget)$
+          transformations:
+            - t:none
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&ARGS:action'
+          value: "1"
+          transformations:
+            - t:none
+      actions:
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[0][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[1][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[2][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[3][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[4][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[5][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[6][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[7][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[8][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[9][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[10][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[11][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[12][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[13][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[14][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[15][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[16][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[17][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[18][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[19][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[20][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[21][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[22][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[23][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[24][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[25][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[26][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[27][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[28][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[29][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[30][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[31][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[32][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[33][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[34][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[35][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[36][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[37][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[38][text]
+        - type: ctl
+          key: ruleRemoveTargetByTag
+          value: OWASP_CRS;ARGS:widget-text[39][text]
+      chain: []
+      tags: []
+tags: []

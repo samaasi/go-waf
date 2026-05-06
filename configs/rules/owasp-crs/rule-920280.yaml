@@ -1,0 +1,26 @@
+id: "920280"
+msg: Request Missing a Host Header
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&REQUEST_HEADERS:Host'
+      value: "0"
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.warning_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/210/272
+    - PCI/6.5.10

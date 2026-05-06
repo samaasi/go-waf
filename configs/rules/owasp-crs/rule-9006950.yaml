@@ -1,0 +1,36 @@
+id: "9006950"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: styles/
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_URI
+      value: /admin.php?styles/
+      transformations:
+        - t:none
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942200;ARGS:json
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942260;ARGS:json
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942300;ARGS:json
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942330;ARGS:json
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942340;ARGS:json
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942370;ARGS:json
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942440;ARGS:json
+chain: []
+tags: []

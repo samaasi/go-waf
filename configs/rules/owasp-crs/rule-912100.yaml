@@ -1,0 +1,43 @@
+id: "912100"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: '&TX:dos_burst_time_slice'
+      value: "0"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&TX:dos_counter_threshold'
+          value: "0"
+          transformations: []
+      actions: []
+      chain: []
+      tags: []
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: '&TX:dos_block_timeout'
+          value: "0"
+          transformations: []
+      actions: []
+      chain: []
+      tags: []
+tags: []

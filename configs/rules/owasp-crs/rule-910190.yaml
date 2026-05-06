@@ -1,0 +1,25 @@
+id: "910190"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: TX:dummy
+      value: .*
+      transformations:
+        - t:none
+actions:
+    - type: setvar
+      key: ip.previous_rbl_check
+      value: "1"
+    - type: expirevar
+      key: ip.previous_rbl_check
+      value: "86400"
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-ip

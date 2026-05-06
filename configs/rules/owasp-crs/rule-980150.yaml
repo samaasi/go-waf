@@ -1,0 +1,30 @@
+id: "980150"
+msg: 'Outbound Anomaly Score (Total Outbound Score: %{TX.OUTBOUND_ANOMALY_SCORE}): individual paranoia level scores: %{TX.OUTBOUND_ANOMALY_SCORE_PL1}'
+severity: 0
+phase: 5
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@lt'
+      variable: TX:OUTBOUND_ANOMALY_SCORE
+      value: '%{tx.outbound_anomaly_score_threshold}'
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@gt'
+          variable: TX:MONITOR_ANOMALY_SCORE
+          value: "1"
+          transformations: []
+      actions: []
+      chain: []
+      tags: []
+tags:
+    - event-correlation

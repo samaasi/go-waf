@@ -1,0 +1,31 @@
+id: "932180"
+msg: Restricted File Upload Attempt
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: default.settings.php
+conditions:
+    - operator: '@pm'
+      variable: FILES|REQUEST_HEADERS:X-Filename|REQUEST_HEADERS:X_Filename|REQUEST_HEADERS:X-File-Name
+      value: .htaccess .htdigest .htpasswd wp-config.php config.yml config_dev.yml config_prod.yml config_test.yml parameters.yml routing.yml security.yml services.yml default.settings.php settings.php settings.local.php local.xml .env
+      transformations:
+        - t:none
+        - t:lowercase
+        - t:removeWhitespace
+actions:
+    - type: setvar
+      key: tx.lfi_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-rce
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/248/88
+    - PCI/6.5.2

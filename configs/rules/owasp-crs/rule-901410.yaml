@@ -1,0 +1,19 @@
+id: "901410"
+msg: ""
+severity: 0
+phase: 1
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: UNIQUE_ID
+      value: ^.
+      transformations:
+        - t:sha1
+        - t:hexEncode
+actions:
+    - type: setvar
+      key: TX.sampling_rnd100
+      value: '%{MATCHED_VAR}'
+chain: []
+tags: []

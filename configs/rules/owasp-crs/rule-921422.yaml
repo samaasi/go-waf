@@ -1,0 +1,27 @@
+id: "921422"
+msg: 'Content-Type header: Dangerous content type outside the mime type declaration'
+severity: 25
+phase: 1
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@rx'
+      variable: REQUEST_HEADERS:Content-Type
+      value: ^[^;s,]+[;s,].*?b(?:(audio|image|video|csv|css|vnd|pdf|plain|json|soap|xml|x-www-form-urlencoded|form-data|related|x-amf|octet|stream|csp|report)|(text|multipart|application)|(/|+))b
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl2
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-protocol
+    - paranoia-level/2
+    - OWASP_CRS
+    - capec/1000/255/153
+    - PCI/12.1

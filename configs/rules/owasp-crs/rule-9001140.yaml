@@ -1,0 +1,17 @@
+id: "9001140"
+msg: ""
+severity: 0
+phase: 2
+action: allow
+pre_filter_keyword: ""
+conditions:
+    - operator: '@endsWith'
+      variable: REQUEST_URI
+      value: /contextual/render
+      transformations: []
+actions:
+    - type: ctl
+      key: ruleRemoveTargetById
+      value: 942130;ARGS:ids[]
+chain: []
+tags: []

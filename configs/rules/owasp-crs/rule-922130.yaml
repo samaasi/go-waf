@@ -1,0 +1,26 @@
+id: "922130"
+msg: Multipart header contains characters outside of valid range
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ':'
+conditions:
+    - operator: '@rx'
+      variable: MULTIPART_PART_HEADERS
+      value: '[^x21-x7E][x21-x39x3B-x7E]*:'
+      transformations:
+        - t:none
+        - t:lowercase
+actions:
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-multipart-header
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/272/220

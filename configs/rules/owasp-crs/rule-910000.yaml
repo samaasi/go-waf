@@ -1,0 +1,38 @@
+id: "910000"
+msg: Request from Known Malicious Client (Based on previous traffic violations)
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: ""
+conditions:
+    - operator: '@eq'
+      variable: TX:DO_REPUT_BLOCK
+      value: "1"
+      transformations:
+        - t:none
+actions: []
+chain:
+    - id: ""
+      msg: ""
+      severity: 10
+      phase: 2
+      action: block
+      pre_filter_keyword: ""
+      conditions:
+        - operator: '@eq'
+          variable: IP:REPUT_BLOCK_FLAG
+          value: "1"
+          transformations: []
+      actions:
+        - type: setvar
+          key: tx.anomaly_score_pl1
+          value: +%{tx.critical_anomaly_score}
+      chain: []
+      tags: []
+tags:
+    - application-multi
+    - language-multi
+    - platform-multi
+    - attack-reputation-ip
+    - paranoia-level/1
+    - OWASP_CRS

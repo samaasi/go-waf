@@ -1,0 +1,34 @@
+id: "933130"
+msg: 'PHP Injection Attack: Variables Found'
+severity: 25
+phase: 2
+action: block
+pre_filter_keyword: $HTTP_RAW_POST_DATA
+conditions:
+    - operator: '@pm'
+      variable: REQUEST_COOKIES|!REQUEST_COOKIES:/__utm/|REQUEST_COOKIES_NAMES|ARGS_NAMES|ARGS|XML:/*
+      value: $GLOBALS $HTTP_COOKIE_VARS $HTTP_ENV_VARS $HTTP_GET_VARS $HTTP_POST_FILES $HTTP_POST_VARS $HTTP_RAW_POST_DATA $HTTP_REQUEST_VARS $HTTP_SERVER_VARS $_COOKIE $_ENV $_FILES $_GET $_POST $_REQUEST $_SERVER $_SESSION $argc $argv
+      transformations:
+        - t:none
+        - t:normalisePath
+        - t:urlDecodeUni
+        - t:lowercase
+actions:
+    - type: ctl
+      key: auditLogParts
+      value: +E
+    - type: setvar
+      key: tx.php_injection_score
+      value: +%{tx.critical_anomaly_score}
+    - type: setvar
+      key: tx.anomaly_score_pl1
+      value: +%{tx.critical_anomaly_score}
+chain: []
+tags:
+    - application-multi
+    - language-php
+    - platform-multi
+    - attack-injection-php
+    - paranoia-level/1
+    - OWASP_CRS
+    - capec/1000/152/242
