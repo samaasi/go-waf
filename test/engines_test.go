@@ -1,6 +1,7 @@
 package test
 
 import (
+    "context"
     "net/url"
     "testing"
     "github.com/samaasi/go-waf/internal/analysis/engines"
@@ -15,7 +16,7 @@ func TestRegexEngine_NormalizedMatch(t *testing.T) {
     q := url.Values{}
     q.Add("q", "%2555nion%20select")
     req := &domain.WafRequest{Path: "/", QueryArgs: q}
-    events := re.Evaluate(req)
+    events := re.Evaluate(context.Background(), req, 1)
     if len(events) == 0 {
         t.Fatalf("expected regex match after normalization")
     }
@@ -29,7 +30,7 @@ func TestFastMatchEngine_NormalizedMatch(t *testing.T) {
     q := url.Values{}
     q.Add("q", "%2555nion%20select")
     req := &domain.WafRequest{Path: "/", QueryArgs: q}
-    events := e.Evaluate(req)
+    events := e.Evaluate(context.Background(), req, 1)
     if len(events) == 0 {
         t.Fatalf("expected fast match events for normalized input")
     }

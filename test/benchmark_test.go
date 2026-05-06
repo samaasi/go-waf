@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/samaasi/go-waf/internal/analysis/engines"
 	"github.com/samaasi/go-waf/internal/config"
 	"github.com/samaasi/go-waf/internal/domain"
+	"github.com/samaasi/go-waf/internal/store"
 )
 
 func BenchmarkWafPipelineFull(b *testing.B) {
@@ -26,7 +28,11 @@ func BenchmarkWafPipelineFull(b *testing.B) {
 	celEngine, _ := engines.NewCelEngine("../configs/rules/cel_rules.json", noopLog)
 	_ = celEngine.LoadRules()
 
-	pipeline := analysis.NewPipeline(secCfg, noopLog, "../configs/rules/dlp_rules.json", nil, acEngine, regexEngine, mlModel, libInj, celEngine)
+	mockStore := store.NewMockCollectionStore()
+	crsEngine := engines.NewCRSLangEngine("../configs/rules/owasp-crs", mockStore)
+	_ = crsEngine.LoadRules()
+
+	pipeline := analysis.NewPipeline(secCfg, noopLog, "../configs/rules/dlp_rules.json", nil, acEngine, regexEngine, mlModel, libInj, celEngine, crsEngine)
 
 	req := &domain.WafRequest{
 		ID:        "bench-full",
@@ -37,14 +43,13 @@ func BenchmarkWafPipelineFull(b *testing.B) {
 		Body: []byte(`{"username": "admin", "payload": "SELECT * FROM users WHERE id=1 OR 1=1"}`),
 	}
 
-	resBody := []byte(`{"status": "success", "data": {"card": "4111-1111-1111-1111"}}`)
-
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		// Inbound
-		_, _ = pipeline.Inspect(req)
+		ctx := context.Background()
+		_, _ = pipeline.Inspect(ctx, req)
 		// Outbound (DLP)
-		_, _, _ = pipeline.InspectResponse(resBody)
+		_, _, _ = pipeline.InspectResponse(ctx, req, 200)
 	}
 }

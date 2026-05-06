@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"testing"
@@ -64,6 +65,6 @@ func FuzzPipelineInspect(f *testing.F) {
 			Protocol:  "HTTP/1.1",
 		}
 		// Must not panic
-		_, _ = pipeline.Inspect(req)
+		_, _ = pipeline.Inspect(context.Background(), req)
 	})
 }

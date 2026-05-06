@@ -1,0 +1,47 @@
+---
+test_title: "SQL Injection Tests"
+meta:
+  author: "antigravity"
+  description: "Verify real CRS SQLi rules"
+  enabled: true
+tests:
+  - test_title: "942100: libinjection detection"
+    stages:
+      - stage:
+          input:
+            dest_addr: "localhost"
+            port: 8080
+            method: "GET"
+            uri: "/?id=1' OR 1=1 --"
+          output:
+            status: 403
+  - test_title: "942140: Common DB Names"
+    stages:
+      - stage:
+          input:
+            dest_addr: "localhost"
+            port: 8080
+            method: "GET"
+            uri: "/?table=information_schema.tables"
+          output:
+            status: 403
+  - test_title: "942160: Blind SQLi (sleep)"
+    stages:
+      - stage:
+          input:
+            dest_addr: "localhost"
+            port: 8080
+            method: "GET"
+            uri: "/?wait=sleep(5)"
+          output:
+            status: 403
+  - test_title: "942270: UNION SELECT"
+    stages:
+      - stage:
+          input:
+            dest_addr: "localhost"
+            port: 8080
+            method: "GET"
+            uri: "/?q=1 union select 1,2,3"
+          output:
+            status: 403

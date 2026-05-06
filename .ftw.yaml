@@ -1,0 +1,22 @@
+logfile: ""
+testoverride:
+  ignore:
+    - ".*" # We'll start by running specific tests
+logmarkerheadername: "X-FTW-Test"
+http:
+  protocol: "http"
+  host: "localhost"
+  port: 8080
+  readtimeout: 10s
+  writetimeout: 10s
+  maxidletimeout: 10s
+  maxidlestreams: 100
+  keepalive: true
+  proxysettings:
+    http: ""
+    https: ""
+    no_proxy: ""
+  tls:
+    insecure: true
+    servername: ""
+  useragent: "go-ftw"
