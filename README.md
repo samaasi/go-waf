@@ -37,12 +37,23 @@ We combine the battle-tested **OWASP Core Rule Set (CRS)** with **libinjection**
 
 We are committed to making Go-WAF the gold standard for high-performance security. Our current focus areas for the next releases include:
 
+### 🛠️ Phase 1: Core Hardening
 - `[ ]` **Rule Persistence**: Move Admin API rule toggles from in-memory to persistent Redis storage.
 - `[ ]` **Enterprise Test Coverage**: Increase statement coverage to **>80%**, targeting the Admin and gRPC layers.
 - `[ ]` **Zero-Allocation Audit**: Optimization of the hot-path to ensure absolute zero-allocation per request.
 - `[ ]` **Full CRS Parity**: Implementation of complex ModSecurity-style variables (e.g. `MATCHED_VARS_NAMES`).
 - `[ ]` **Automated Threat Intel**: Integration with remote rule repositories for real-time signature updates.
-- `[ ]` **Integration Hardening**: Restoring full compatibility with the FTW (Framework for Testing WAFs) suite.
+
+### 🧠 Phase 2: Behavioral Intelligence
+- `[ ]` **Dynamic Rate Limiting**: Rate limits that tighten automatically based on real-time Anomaly Scores.
+- `[ ]` **WebSocket Inspection**: Deep frame inspection for WebSocket and streaming protocols.
+- `[ ]` **WAF-as-Code**: Official Terraform Provider for declarative security management.
+- `[ ]` **SIEM Connectors**: Native high-speed exporters for Splunk, Elastic, and Datadog.
+
+### 🤖 Phase 3: AI-Security & Auto-Tuning
+- `[ ]` **LLM-Shield**: Protection against Prompt Injection and Insecure Output Handling for AI apps.
+- `[ ]` **Auto-Tuning Engine**: ML-driven feedback loop to suggest threshold adjustments and minimize False Positives.
+- `[ ]` **Active Anti-Bot**: JavaScript-based browser environment verification to block advanced headless bots.
 
 ## 📚 Documentation Suite
 
