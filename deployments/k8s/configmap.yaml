@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waf-config
+data:
+  redis_host: "redis-master.default.svc.cluster.local"
+  app-config.yaml: |
+    server:
+      port: 8080
+      mode: release
+      enable_proxy: true
+      proxy_target: "http://my-backend-service:80"
+    security:
+      block_threshold: 50
+      rate_limit: 1000
+      dlp:
+        enabled: true
+        action: "mask"
+    log:
+      level: info
+    telemetry:
+      enabled: true
+      collector_url: "https://api.snapwaf.com/v1/ingest"

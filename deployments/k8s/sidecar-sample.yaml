@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-with-waf
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: app
+        image: my-app-image:latest
+        ports:
+        - containerPort: 3000 # App listens on 3000
+      - name: waf-sidecar
+        image: samaasi/go-waf:latest
+        env:
+        - name: WAF_SERVER_ENABLE_PROXY
+          value: "true"
+        - name: WAF_SERVER_PROXY_TARGET
+          value: "http://localhost:3000"
+        ports:
+        - containerPort: 8080 # WAF listens on 8080 and proxies to 3000

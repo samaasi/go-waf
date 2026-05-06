@@ -1,0 +1,6 @@
+apiVersion: v2
+name: go-waf
+description: A high-performance, cloud-native Web Application Firewall (WAF) built in Go.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-waf
+  labels:
+    app: go-waf
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: go-waf
+  template:
+    metadata:
+      labels:
+        app: go-waf
+    spec:
+      containers:
+      - name: waf
+        image: samaasi/go-waf:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: proxy
+        - containerPort: 8081
+          name: admin
+        env:
+        - name: WAF_REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: waf-config
+              key: redis_host
+        - name: WAF_SERVER_ADMIN_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: waf-secrets
+              key: admin_api_key
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: admin
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: admin
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: config-volume
+          mountPath: /home/wafuser/configs/app-config.yaml
+          subPath: app-config.yaml
+      volumes:
+      - name: config-volume
+        configMap:
+          name: waf-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-waf
+spec:
+  selector:
+    app: go-waf
+  ports:
+  - name: proxy
+    port: 80
+    targetPort: 8080
+  - name: admin
+    port: 8081
+    targetPort: 8081
+  type: LoadBalancer

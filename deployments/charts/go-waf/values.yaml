@@ -1,0 +1,31 @@
+replicaCount: 3
+
+image:
+  repository: samaasi/go-waf
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: LoadBalancer
+  proxyPort: 80
+  adminPort: 8081
+
+config:
+  proxyTarget: "http://my-backend-service:80"
+  blockThreshold: 50
+  dlpEnabled: true
+  dlpAction: "mask"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80

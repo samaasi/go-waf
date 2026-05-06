@@ -1,27 +1,25 @@
-/.idea/
-/.vscode/
-/.history/
-/.cache/
-
-*.log
-*.tmp
-*.swp
-*.swo
-
-.env
-.env.*
-.envrc
-
+# Binaries
 bin/
-build/
-dist/
-coverage/
+go-waf-prod
+go-waf-proxy
 
-waf-server
-waf-server.exe
+# IDEs
+.vscode/
+.idea/
+
+# Temporary / Scratch
+tmp/
+scratch/
+.gemini/
+.env*
+
 *.exe
-*.out
-*.test
+*.dll
 
-Thumbs.db
+# Logs
+configs/audit.log
+*.log
+
+# OS
 .DS_Store
+Thumbs.db
