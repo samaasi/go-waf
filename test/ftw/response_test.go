@@ -32,6 +32,8 @@ func (m *mockHeaderEngine) Evaluate(ctx context.Context, req *domain.WafRequest,
 	}
 	return nil
 }
+func (m *mockHeaderEngine) GetRules() []domain.RuleMetadata          { return nil }
+func (m *mockHeaderEngine) ToggleRule(id string, enabled bool) bool { return true }
 
 func TestResponseInspection(t *testing.T) {
 	gin.SetMode(gin.TestMode)
