@@ -1,11 +1,15 @@
 package domain
 
+import (
+	"context"
+)
+
 // Rule represents a single detection logic unit.
 type Rule interface {
 	ID() string
 	Name() string
 	Tags() []string
-	Evaluate(req *WafRequest) (bool, string)
+	Evaluate(ctx context.Context, req *WafRequest) (bool, string)
 	Severity() Severity
 }
 
@@ -14,5 +18,5 @@ type RuleEngine interface {
 	ID() string
 	Name() string
 	LoadRules() error
-	Evaluate(req *WafRequest) []*SecurityEvent
+	Evaluate(ctx context.Context, req *WafRequest, phase int) []*SecurityEvent
 }
